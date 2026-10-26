@@ -361,10 +361,12 @@ void MainWnd::CellMenu(const Hit& h, POINT sp) {
     ModalGuard guard(*this);
     CellRef ref = RefForSlot(h.index);
     HMENU menu = CreatePopupMenu();
-    if (ItemAt(ref)) {
+    if (const Item* it = ItemAt(ref)) {
         AddMenu(menu, kCmdOpen, T(L"menu.open", L"Open"));
-        AddMenu(menu, kCmdRunAdmin, T(L"menu.runAdmin", L"Run as administrator"));
-        AddMenu(menu, kCmdOpenFolder, T(L"menu.openFolder", L"Open file location"));
+        if (!IsUrl(it->file)) {  // a web address has no administrator mode and no file location
+            AddMenu(menu, kCmdRunAdmin, T(L"menu.runAdmin", L"Run as administrator"));
+            AddMenu(menu, kCmdOpenFolder, T(L"menu.openFolder", L"Open file location"));
+        }
         AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
         AddMenu(menu, kCmdEdit, T(L"menu.edit", L"Properties..."));
         AddMenu(menu, kCmdDelete, T(L"menu.delete", L"Delete"));

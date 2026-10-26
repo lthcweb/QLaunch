@@ -150,6 +150,27 @@ HICON LocatedIcon(const std::wstring& path, int size) {
     return FileIcon(ExpandEnv(sfi.szDisplayName), sfi.iIcon, size);
 }
 
+// A web address shows the icon of the program that opens it: the default browser for http(s), the mail
+// program for mailto:
+HICON UrlIcon(const std::wstring& url, int size) {
+    // ASSOCF_IS_PROTOCOL (Windows 8+, not declared for our Windows 7 target) follows the user's choice of
+    // default browser; Windows 7 rejects it and gets the plain protocol key instead
+    const ASSOCF flags[] = {static_cast<ASSOCF>(0x1000), ASSOCF_NONE};
+    std::wstring scheme = url.substr(0, url.find(L':'));
+    wchar_t buf[MAX_PATH * 2];
+    for (ASSOCF f : flags) {
+        DWORD len = _countof(buf);
+        if (SUCCEEDED(AssocQueryStringW(f, ASSOCSTR_DEFAULTICON, scheme.c_str(), nullptr, buf, &len))) {
+            int index = PathParseIconLocationW(buf);
+            if (HICON icon = FileIcon(ExpandEnv(buf), index, size)) return icon;
+        }
+        len = _countof(buf);
+        if (SUCCEEDED(AssocQueryStringW(f, ASSOCSTR_EXECUTABLE, scheme.c_str(), L"open", buf, &len)))
+            if (HICON icon = FileIcon(buf, 0, size)) return icon;
+    }
+    return nullptr;
+}
+
 }  // namespace
 
 uint64_t IconKey(const Item& item, int size) {
@@ -169,6 +190,12 @@ IconPixels ExtractIconPixels(const Item& item, int size) {
     IconHandle icon;
     if (!item.icon.empty()) icon.reset(FileIcon(ResolvePath(item.icon), item.iconIndex, size));
     if (!icon && !item.file.empty()) {
+        if (IsUrl(item.file)) {
+            std::wstring url = NormalizeUrl(item.file);
+            icon.reset(UrlIcon(url, size));
+            if (!icon) return ShellIconPixels(L".html", size);  // generic web page icon
+            return RenderIcon(icon.get(), size);
+        }
         std::wstring file = NativePath(ExpandEnv(item.file));
         icon.reset(LocatedIcon(file, size));
         if (!icon) return ShellIconPixels(file, size);

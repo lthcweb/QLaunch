@@ -1,4 +1,4 @@
-// Accepts things dragged in from Explorer (OLE drag and drop).
+// Accepts things dragged in from Explorer, and links dragged from a browser (OLE drag and drop).
 // WM_DROPFILES only receives real files; virtual objects such as Control Panel, Recycle Bin and This PC
 // are only offered as Shell IDLists, so IDropTarget is used instead.
 #pragma once
@@ -8,7 +8,7 @@
 #include <ole2.h>
 
 struct DroppedItem {
-    std::wstring file;  // file path, or a virtual object such as shell:::{CLSID}
+    std::wstring file;  // file path, a virtual object such as shell:::{CLSID}, or a web address
     std::wstring name;  // name shown on the button
 };
 

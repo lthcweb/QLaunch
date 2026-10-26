@@ -109,8 +109,9 @@ INT_PTR CALLBACK ItemProc(HWND dlg, UINT msg, WPARAM wp, LPARAM lp) {
                         return TRUE;
                     }
                     item->name = GetText(dlg, IDC_NAME);
-                    item->file = GetText(dlg, IDC_FILE);
-                    if (item->name.empty()) item->name = FileTitle(item->file);
+                    item->file = NormalizeUrl(GetText(dlg, IDC_FILE));
+                    if (item->name.empty())
+                        item->name = IsUrl(item->file) ? UrlSiteName(item->file) : FileTitle(item->file);
                     item->args = GetText(dlg, IDC_ARGS);
                     item->dir = GetText(dlg, IDC_DIR);
                     item->icon = GetText(dlg, IDC_ICONFILE);

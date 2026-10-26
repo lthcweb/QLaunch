@@ -3,6 +3,7 @@
 #include <shlwapi.h>
 
 #include "core/handle.h"
+#include "core/str.h"
 
 const std::wstring& AppDir() {
     static std::wstring dir = [] {
@@ -59,6 +60,32 @@ std::wstring FileTitle(const std::wstring& path) {
     std::wstring name = slash == std::wstring::npos ? path : path.substr(slash + 1);
     size_t dot = name.find_last_of(L'.');
     return (dot == std::wstring::npos || dot == 0) ? name : name.substr(0, dot);
+}
+
+bool IsUrl(const std::wstring& s) {
+    if (StartsWithNoCase(s, L"www.") || StartsWithNoCase(s, L"mailto:")) return true;
+    // a scheme is a letter followed by letters, digits, '+', '-' or '.'; requiring two characters keeps
+    // drive letters (C:) out
+    size_t colon = s.find(L"://");
+    if (colon == std::wstring::npos || colon < 2 || !iswalpha(s[0])) return false;
+    for (size_t i = 1; i < colon; ++i)
+        if (!iswalnum(s[i]) && s[i] != L'+' && s[i] != L'-' && s[i] != L'.') return false;
+    return true;
+}
+
+std::wstring NormalizeUrl(const std::wstring& s) {
+    return StartsWithNoCase(s, L"www.") ? L"https://" + s : s;
+}
+
+std::wstring UrlSiteName(const std::wstring& url) {
+    std::wstring host = NormalizeUrl(url);
+    size_t start = host.find(L"://");
+    host = start == std::wstring::npos ? host.substr(host.find(L':') + 1) : host.substr(start + 3);
+    host = host.substr(0, host.find_first_of(L"/?#"));
+    host = host.substr(host.find(L'@') + 1);  // user@host; npos + 1 == 0 keeps the whole string
+    host = host.substr(0, host.find(L':'));   // port
+    if (StartsWithNoCase(host, L"www.")) host.erase(0, 4);
+    return host.empty() ? url : host;
 }
 
 bool FileExists(const std::wstring& path) {

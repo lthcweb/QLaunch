@@ -13,6 +13,10 @@ std::wstring ResolvePath(const std::wstring& path); // expands variables; relati
 std::wstring NativePath(const std::wstring& path);
 std::wstring DirOf(const std::wstring& path);       // no trailing '\'
 std::wstring FileTitle(const std::wstring& path);   // no folder, no extension
+// Web addresses: anything with a scheme such as https:// or ftp://, mailto:, or a bare www.example.com
+bool IsUrl(const std::wstring& s);
+std::wstring NormalizeUrl(const std::wstring& s);   // www.example.com -> https://www.example.com
+std::wstring UrlSiteName(const std::wstring& url);  // https://www.example.com/a?b -> example.com
 bool FileExists(const std::wstring& path);
 bool DirExists(const std::wstring& path);
 uint64_t LastWriteTime(const std::wstring& path);   // 0 when the file doesn't exist

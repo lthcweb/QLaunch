@@ -4,6 +4,7 @@
 #include <shlobj.h>
 
 #include "core/path.h"
+#include "core/str.h"
 
 namespace {
 
@@ -16,9 +17,53 @@ CLIPFORMAT IdListFormat() {
     return cf;
 }
 
+CLIPFORMAT UrlFormat() {
+    static const CLIPFORMAT cf = (CLIPFORMAT)RegisterClipboardFormatW(CFSTR_INETURLW);
+    return cf;
+}
+
+CLIPFORMAT FileGroupFormat() {
+    static const CLIPFORMAT cf = (CLIPFORMAT)RegisterClipboardFormatW(CFSTR_FILEDESCRIPTORW);
+    return cf;
+}
+
 bool HasFormat(IDataObject* data, CLIPFORMAT cf) {
     FORMATETC fmt{cf, nullptr, DVASPECT_CONTENT, -1, TYMED_HGLOBAL};
     return data->QueryGetData(&fmt) == S_OK;
+}
+
+// Reads a UTF-16 text format; only the first line, trimmed
+bool ReadText(IDataObject* data, CLIPFORMAT cf, std::wstring& out) {
+    FORMATETC fmt{cf, nullptr, DVASPECT_CONTENT, -1, TYMED_HGLOBAL};
+    STGMEDIUM med{};
+    if (FAILED(data->GetData(&fmt, &med))) return false;
+    if (const auto* text = static_cast<const wchar_t*>(GlobalLock(med.hGlobal))) {
+        out.assign(text, wcsnlen(text, GlobalSize(med.hGlobal) / sizeof(wchar_t)));
+        GlobalUnlock(med.hGlobal);
+    }
+    ReleaseStgMedium(&med);
+    out = Trim(out.substr(0, out.find_first_of(L"\r\n")));
+    return !out.empty();
+}
+
+// A link dragged from a browser (address bar, link on a page) or selected text that is a web address
+bool ReadUrl(IDataObject* data, std::wstring& url) {
+    return ReadText(data, UrlFormat(), url) || (ReadText(data, CF_UNICODETEXT, url) && IsUrl(url));
+}
+
+// Browsers also offer the link as a virtual "Page title.url" file: use its name for the button
+std::wstring LinkTitle(IDataObject* data) {
+    std::wstring title;
+    FORMATETC fmt{FileGroupFormat(), nullptr, DVASPECT_CONTENT, -1, TYMED_HGLOBAL};
+    STGMEDIUM med{};
+    if (FAILED(data->GetData(&fmt, &med))) return title;
+    if (const auto* group = static_cast<const FILEGROUPDESCRIPTORW*>(GlobalLock(med.hGlobal))) {
+        std::wstring name(group->cItems ? group->fgd[0].cFileName : L"");
+        if (name.size() > 4 && EqualsNoCase(name.substr(name.size() - 4), L".url")) title = FileTitle(name);
+        GlobalUnlock(med.hGlobal);
+    }
+    ReleaseStgMedium(&med);
+    return title;
 }
 
 bool NameOf(PCIDLIST_ABSOLUTE pidl, SIGDN kind, std::wstring& out) {
@@ -107,7 +152,8 @@ POINT DropTarget::ToClient(POINTL pt) const {
 }
 
 HRESULT DropTarget::DragEnter(IDataObject* data, DWORD, POINTL pt, DWORD* effect) {
-    accept_ = HasFormat(data, IdListFormat()) || HasFormat(data, CF_HDROP);
+    std::wstring url;
+    accept_ = HasFormat(data, IdListFormat()) || HasFormat(data, CF_HDROP) || ReadUrl(data, url);
     if (!accept_) {
         *effect = DROPEFFECT_NONE;
         return S_OK;
@@ -142,6 +188,11 @@ HRESULT DropTarget::Drop(IDataObject* data, DWORD, POINTL pt, DWORD* effect) {
     std::vector<DroppedItem> items;
     ReadIdList(data, items);  // prefer the IDList: virtual objects only come that way
     if (items.empty()) ReadFiles(data, items);
+    std::wstring url;
+    if (items.empty() && ReadUrl(data, url)) {
+        std::wstring title = LinkTitle(data);
+        items.push_back(DroppedItem{NormalizeUrl(url), title.empty() ? UrlSiteName(url) : title});
+    }
     *effect = items.empty() ? DROPEFFECT_NONE : ChooseEffect(*effect);
     sink_.DragEnd();
     if (!items.empty()) sink_.DropItems(ToClient(pt), items);

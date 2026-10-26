@@ -40,6 +40,7 @@ QLaunch stays out of sight. Move the mouse into the screen corner you chose (bot
 ### Buttons
 
 - Drag files, folders or shortcuts from Explorer onto the window to add them. This PC, Control Panel, Recycle Bin and other system items work too.
+- Websites: drag a link or the address bar from your browser onto the window, or type a web address as the button's target. The button opens it in your default browser and shows the browser's icon.
 - Drag buttons to move or swap them, or onto another tab (even a sub-tab) to move them to that page.
 - Resize the window by its border and the grid gains or loses rows and columns. Buttons keep their place.
 - Right-click a button for Open, Run as administrator, Open file location, Properties and Delete. Right-click a tab to rename it or add a page or sub-page. Right-click the caption for Settings.
@@ -140,6 +141,7 @@ QLaunch 平时不占地方。鼠标移到设定的屏幕角落（默认左下角
 ### 按钮
 
 - 从资源管理器把文件、文件夹、快捷方式拖进窗口就能添加按钮，此电脑、控制面板、回收站这类系统项目也可以。
+- 网站：把浏览器里的链接或地址栏拖进窗口，或者在按钮属性的“目标”里填网址。点按钮用默认浏览器打开，图标显示浏览器的图标。
 - 按钮可以拖动换位置，也可以拖到别的标签（包括二级标签）上，移到那个页面。
 - 拖动窗口边框调整行列数，按钮留在原位。
 - 右键按钮：打开、以管理员身份运行、打开所在位置、属性、删除。右键标签：重命名、新建页面或子页。右键标题栏：设置。
