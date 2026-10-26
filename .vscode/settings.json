@@ -1,0 +1,13 @@
+{
+  // Use CMakePresets.json (x64-debug / x64-release)
+  "cmake.useCMakePresets": "always",
+  "cmake.configureOnOpen": true,
+  // MSVC prints localized messages in the system code page (e.g. GBK); decode them correctly
+  "cmake.outputLogEncoding": "auto",
+  // IntelliSense takes include paths and defines straight from CMake
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+  "files.encoding": "utf8",
+  "files.eol": "\r\n",
+  "files.exclude": { "out/": true },
+  "search.exclude": { "out/": true }
+}

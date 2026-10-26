@@ -1,0 +1,111 @@
+#pragma code_page(65001)
+// Resource script (UTF-8). code_page must stay on the first line: on a Chinese system rc.exe
+// reads GBK by default and could swallow the line break after a non-ASCII comment.
+// The English text in the dialogs is the default; language files replace it at run time.
+#include <windows.h>
+#include <commctrl.h>
+#include "resource.h"
+
+IDI_APP ICON "app.ico"
+1 RT_MANIFEST "app.manifest"
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 0,1,0,0
+ PRODUCTVERSION 0,1,0,0
+ FILEOS VOS_NT_WINDOWS32
+ FILETYPE VFT_APP
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "FileDescription", "QLaunch launcher"
+            VALUE "FileVersion", "0.1.0"
+            VALUE "ProductName", "QLaunch"
+            VALUE "ProductVersion", "0.1.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+
+IDD_ITEM DIALOGEX 0, 0, 300, 176
+STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Button properties"
+FONT 9, "MS Shell Dlg 2"
+BEGIN
+    LTEXT           "Name:", IDC_NAME_LABEL, 8, 10, 60, 8
+    EDITTEXT        IDC_NAME, 72, 8, 220, 12, ES_AUTOHSCROLL
+    LTEXT           "Target:", IDC_FILE_LABEL, 8, 28, 60, 8
+    EDITTEXT        IDC_FILE, 72, 26, 196, 12, ES_AUTOHSCROLL
+    PUSHBUTTON      "...", IDC_FILE_BROWSE, 272, 25, 20, 14
+    LTEXT           "Arguments:", IDC_ARGS_LABEL, 8, 46, 60, 8
+    EDITTEXT        IDC_ARGS, 72, 44, 220, 12, ES_AUTOHSCROLL
+    LTEXT           "Start in:", IDC_DIR_LABEL, 8, 64, 60, 8
+    EDITTEXT        IDC_DIR, 72, 62, 220, 12, ES_AUTOHSCROLL
+    LTEXT           "Icon file:", IDC_ICON_LABEL, 8, 82, 60, 8
+    EDITTEXT        IDC_ICONFILE, 72, 80, 196, 12, ES_AUTOHSCROLL
+    PUSHBUTTON      "...", IDC_ICON_BROWSE, 272, 79, 20, 14
+    LTEXT           "Icon index:", IDC_ICON_INDEX_LABEL, 8, 100, 60, 8
+    EDITTEXT        IDC_ICON_INDEX, 72, 98, 40, 12, ES_AUTOHSCROLL
+    LTEXT           "Run:", IDC_SHOW_LABEL, 124, 100, 40, 8
+    COMBOBOX        IDC_SHOW, 168, 98, 124, 60, CBS_DROPDOWNLIST | WS_TABSTOP
+    LTEXT           "Tooltip:", IDC_TIP_LABEL, 8, 118, 60, 8
+    EDITTEXT        IDC_TIP, 72, 116, 220, 12, ES_AUTOHSCROLL
+    AUTOCHECKBOX    "Run as administrator", IDC_ADMIN, 72, 134, 220, 10
+    DEFPUSHBUTTON   "OK", IDOK, 186, 154, 50, 14
+    PUSHBUTTON      "Cancel", IDCANCEL, 242, 154, 50, 14
+END
+
+IDD_INPUT DIALOGEX 0, 0, 220, 64
+STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "QLaunch"
+FONT 9, "MS Shell Dlg 2"
+BEGIN
+    LTEXT           "Name:", IDC_INPUT_LABEL, 8, 8, 204, 8
+    EDITTEXT        IDC_INPUT, 8, 20, 204, 12, ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "OK", IDOK, 106, 42, 50, 14
+    PUSHBUTTON      "Cancel", IDCANCEL, 162, 42, 50, 14
+END
+
+IDD_SETTINGS DIALOGEX 0, 0, 280, 250
+STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Settings"
+FONT 9, "MS Shell Dlg 2"
+BEGIN
+    GROUPBOX        "Show launcher", IDC_GROUP_TRIGGER, 6, 4, 268, 84
+    LTEXT           "Hot corner:", IDC_CORNER_LABEL, 14, 20, 80, 8
+    COMBOBOX        IDC_CORNER, 100, 18, 100, 80, CBS_DROPDOWNLIST | WS_TABSTOP
+    LTEXT           "Delay (ms):", IDC_DELAY_LABEL, 14, 38, 80, 8
+    EDITTEXT        IDC_DELAY, 100, 36, 40, 12, ES_NUMBER
+    LTEXT           "Hotkey:", IDC_HOTKEY_LABEL, 14, 56, 80, 8
+    CONTROL         "", IDC_HOTKEY, HOTKEY_CLASS, WS_BORDER | WS_TABSTOP, 100, 54, 100, 12
+    LTEXT           "Show at:", IDC_SHOWAT_LABEL, 14, 72, 80, 8
+    COMBOBOX        IDC_SHOWAT, 100, 70, 100, 60, CBS_DROPDOWNLIST | WS_TABSTOP
+
+    GROUPBOX        "Appearance", IDC_GROUP_LOOK, 6, 92, 268, 130
+    LTEXT           "Language:", IDC_LANG_LABEL, 14, 108, 80, 8
+    COMBOBOX        IDC_LANG, 100, 106, 100, 120, CBS_DROPDOWNLIST | WS_TABSTOP
+    LTEXT           "Skin:", IDC_SKIN_LABEL, 14, 126, 80, 8
+    COMBOBOX        IDC_SKIN, 100, 124, 100, 120, CBS_DROPDOWNLIST | WS_TABSTOP
+    LTEXT           "Tabs:", IDC_TABSIDE_LABEL, 14, 144, 80, 8
+    COMBOBOX        IDC_TABSIDE, 100, 142, 100, 80, CBS_DROPDOWNLIST | WS_TABSTOP
+    LTEXT           "Button size:", IDC_CELL_LABEL, 14, 162, 80, 8
+    EDITTEXT        IDC_CELLW, 100, 160, 30, 12, ES_NUMBER
+    EDITTEXT        IDC_CELLH, 136, 160, 30, 12, ES_NUMBER
+    PUSHBUTTON      "Font", IDC_CELLFONT, 172, 159, 94, 14
+    LTEXT           "Tab size:", IDC_TAB_LABEL, 14, 180, 80, 8
+    EDITTEXT        IDC_TABW, 100, 178, 30, 12, ES_NUMBER
+    EDITTEXT        IDC_TABH, 136, 178, 30, 12, ES_NUMBER
+    PUSHBUTTON      "Font", IDC_TABFONT, 172, 177, 94, 14
+    LTEXT           "Icon size:", IDC_ICONSIZE_LABEL, 14, 198, 80, 8
+    COMBOBOX        IDC_ICONSIZE, 100, 196, 50, 80, CBS_DROPDOWNLIST | WS_TABSTOP
+    LTEXT           "Tab hover (ms):", IDC_HOVER_LABEL, 160, 198, 70, 8
+    EDITTEXT        IDC_HOVER, 232, 196, 34, 12
+
+    AUTOCHECKBOX    "Start with Windows", IDC_AUTOSTART, 8, 230, 140, 10
+    DEFPUSHBUTTON   "OK", IDOK, 168, 228, 50, 14
+    PUSHBUTTON      "Cancel", IDCANCEL, 224, 228, 50, 14
+END

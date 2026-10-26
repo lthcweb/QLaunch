@@ -1,0 +1,15 @@
+{
+  // Ctrl+Shift+B builds the current preset with CMake Tools (pick x64-debug / x64-release in the status bar),
+  // the same as the status bar "Build" button or F7. CMake Tools finds Visual Studio and sets up the environment itself.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build QLaunch",
+      "type": "cmake",
+      "command": "build",
+      "preset": "${command:cmake.activeBuildPresetName}",
+      "problemMatcher": ["$msCompile"],
+      "group": { "kind": "build", "isDefault": true }
+    }
+  ]
+}
