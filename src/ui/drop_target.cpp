@@ -75,13 +75,23 @@ bool NameOf(PCIDLIST_ABSOLUTE pidl, SIGDN kind, std::wstring& out) {
 }
 
 // Real files use their path; virtual objects use their parsing name (::{20D04FE0-...} is This PC), which opens
-// with a shell: prefix
+// with a shell: prefix. Apps from the Start menu (Store apps) only give their app id, which opens from the
+// Applications folder.
 DroppedItem ItemFromIdList(PCIDLIST_ABSOLUTE pidl) {
     DroppedItem it;
     if (NameOf(pidl, SIGDN_FILESYSPATH, it.file)) {
         it.name = FileTitle(it.file);
     } else if (NameOf(pidl, SIGDN_DESKTOPABSOLUTEPARSING, it.file)) {
-        if (!IsUrl(it.file)) it.file = L"shell:" + it.file;
+        if (!IsUrl(it.file)) {
+            std::wstring path = L"shell:" + it.file;
+            PIDLIST_ABSOLUTE test = nullptr;
+            if (SUCCEEDED(SHParseDisplayName(path.c_str(), nullptr, &test, 0, nullptr))) CoTaskMemFree(test);
+            else if (PIDLIST_ABSOLUTE app = ParseShellPath(path)) {
+                CoTaskMemFree(app);
+                path = L"shell:AppsFolder\\" + it.file;
+            }
+            it.file = std::move(path);
+        }
         NameOf(pidl, SIGDN_NORMALDISPLAY, it.name);
     }
     return it;

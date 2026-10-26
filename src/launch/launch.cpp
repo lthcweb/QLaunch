@@ -28,11 +28,10 @@ bool LaunchItem(HWND owner, const Item& item, bool forceAdmin) {
     sei.lpDirectory = dir.empty() ? nullptr : dir.c_str();
     sei.nShow = item.show;
 
-    // virtual objects (shell:::{CLSID}, maybe with a sub path) are parsed to an IDList first, which is more
-    // reliable
-    PIDLIST_ABSOLUTE pidl = nullptr;
-    if (StartsWithNoCase(file, L"shell:") &&
-        SUCCEEDED(SHParseDisplayName(file.c_str(), nullptr, &pidl, 0, nullptr))) {
+    // virtual objects (shell:::{CLSID}, maybe with a sub path, Store apps) are parsed to an IDList first,
+    // which is more reliable
+    PIDLIST_ABSOLUTE pidl = StartsWithNoCase(file, L"shell:") ? ParseShellPath(file) : nullptr;
+    if (pidl) {
         sei.fMask |= SEE_MASK_IDLIST;
         sei.lpIDList = pidl;
         sei.lpFile = nullptr;

@@ -1,5 +1,6 @@
 #include "core/path.h"
 
+#include <shlobj.h>
 #include <shlwapi.h>
 
 #include "core/handle.h"
@@ -60,6 +61,14 @@ std::wstring FileTitle(const std::wstring& path) {
     std::wstring name = slash == std::wstring::npos ? path : path.substr(slash + 1);
     size_t dot = name.find_last_of(L'.');
     return (dot == std::wstring::npos || dot == 0) ? name : name.substr(0, dot);
+}
+
+PIDLIST_ABSOLUTE ParseShellPath(const std::wstring& path) {
+    PIDLIST_ABSOLUTE pidl = nullptr;
+    if (SUCCEEDED(SHParseDisplayName(path.c_str(), nullptr, &pidl, 0, nullptr))) return pidl;
+    if (!StartsWithNoCase(path, L"shell:") || path.find(L'\\') != std::wstring::npos) return nullptr;
+    std::wstring app = L"shell:AppsFolder\\" + path.substr(6);
+    return SUCCEEDED(SHParseDisplayName(app.c_str(), nullptr, &pidl, 0, nullptr)) ? pidl : nullptr;
 }
 
 bool IsUrl(const std::wstring& s) {

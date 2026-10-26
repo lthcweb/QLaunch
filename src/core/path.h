@@ -3,6 +3,8 @@
 
 #include "core/base.h"
 
+#include <shtypes.h>
+
 const std::wstring& AppDir();                       // ends with '\'
 std::wstring AppFile(const wchar_t* relative);      // AppDir() + relative
 
@@ -11,6 +13,10 @@ std::wstring ResolvePath(const std::wstring& path); // expands variables; relati
 // The 32-bit build on 64-bit Windows sees System32 redirected to SysWOW64, where many tools (Task Manager...)
 // don't exist; this maps System32 paths to Sysnative, the alias for the real one. No-op in the 64-bit build.
 std::wstring NativePath(const std::wstring& path);
+// Parses a shell: path (shell:::{CLSID}, shell:Downloads, shell:AppsFolder\<app id>...) to an IDList; free it
+// with CoTaskMemFree. A bare shell:<app id> (Store apps, as saved by older versions) is looked up in the
+// Applications folder.
+PIDLIST_ABSOLUTE ParseShellPath(const std::wstring& path);
 std::wstring DirOf(const std::wstring& path);       // no trailing '\'
 std::wstring FileTitle(const std::wstring& path);   // no folder, no extension
 // Web addresses: anything with a scheme such as https:// or ftp://, mailto:, or a bare www.example.com

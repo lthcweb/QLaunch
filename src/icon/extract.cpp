@@ -75,8 +75,8 @@ int ShellImageListFor(int size) {
 HICON ShellIcon(const std::wstring& path, int list) {
     SHFILEINFOW sfi{};
     if (StartsWithNoCase(path, L"shell:")) {  // virtual object such as This PC
-        PIDLIST_ABSOLUTE pidl = nullptr;
-        if (FAILED(SHParseDisplayName(path.c_str(), nullptr, &pidl, 0, nullptr))) return nullptr;
+        PIDLIST_ABSOLUTE pidl = ParseShellPath(path);
+        if (!pidl) return nullptr;
         SHGetFileInfoW(reinterpret_cast<LPCWSTR>(pidl), 0, &sfi, sizeof(sfi),
                        SHGFI_PIDL | SHGFI_SYSICONINDEX);
         CoTaskMemFree(pidl);
