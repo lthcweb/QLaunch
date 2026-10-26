@@ -81,7 +81,7 @@ DroppedItem ItemFromIdList(PCIDLIST_ABSOLUTE pidl) {
     if (NameOf(pidl, SIGDN_FILESYSPATH, it.file)) {
         it.name = FileTitle(it.file);
     } else if (NameOf(pidl, SIGDN_DESKTOPABSOLUTEPARSING, it.file)) {
-        it.file = L"shell:" + it.file;
+        if (!IsUrl(it.file)) it.file = L"shell:" + it.file;
         NameOf(pidl, SIGDN_NORMALDISPLAY, it.name);
     }
     return it;
@@ -186,13 +186,16 @@ HRESULT DropTarget::Drop(IDataObject* data, DWORD, POINTL pt, DWORD* effect) {
     }
     accept_ = false;
     std::vector<DroppedItem> items;
-    ReadIdList(data, items);  // prefer the IDList: virtual objects only come that way
-    if (items.empty()) ReadFiles(data, items);
+    // a link from a browser may come with a temporary .url file or an IDList as well: take the address itself
     std::wstring url;
-    if (items.empty() && ReadUrl(data, url)) {
+    if (ReadText(data, UrlFormat(), url) && IsUrl(url)) {
         std::wstring title = LinkTitle(data);
         items.push_back(DroppedItem{NormalizeUrl(url), title.empty() ? UrlSiteName(url) : title});
     }
+    if (items.empty()) ReadIdList(data, items);  // before CF_HDROP: virtual objects only come as IDLists
+    if (items.empty()) ReadFiles(data, items);
+    if (items.empty() && ReadText(data, CF_UNICODETEXT, url) && IsUrl(url))
+        items.push_back(DroppedItem{NormalizeUrl(url), UrlSiteName(url)});
     *effect = items.empty() ? DROPEFFECT_NONE : ChooseEffect(*effect);
     sink_.DragEnd();
     if (!items.empty()) sink_.DropItems(ToClient(pt), items);

@@ -98,6 +98,12 @@ HICON ShellIcon(const std::wstring& path, int list) {
     return icon;
 }
 
+bool IsBlank(const IconPixels& p) {
+    for (uint32_t v : p.px)
+        if (v >> 24) return false;
+    return true;
+}
+
 // The icon was drawn only in the top-left quarter
 bool OnlyInTopLeft(const IconPixels& p) {
     int half = p.size / 2;
@@ -191,10 +197,11 @@ IconPixels ExtractIconPixels(const Item& item, int size) {
     if (!item.icon.empty()) icon.reset(FileIcon(ResolvePath(item.icon), item.iconIndex, size));
     if (!icon && !item.file.empty()) {
         if (IsUrl(item.file)) {
-            std::wstring url = NormalizeUrl(item.file);
-            icon.reset(UrlIcon(url, size));
-            if (!icon) return ShellIconPixels(L".html", size);  // generic web page icon
-            return RenderIcon(icon.get(), size);
+            icon.reset(UrlIcon(NormalizeUrl(item.file), size));
+            IconPixels px = icon ? RenderIcon(icon.get(), size) : IconPixels{};
+            if (px.Empty() || IsBlank(px)) px = ShellIconPixels(L".html", size);  // generic web page icon
+            if (px.Empty() || IsBlank(px)) px = ShellIconPixels(L".url", size);   // Internet shortcut
+            return px;
         }
         std::wstring file = NativePath(ExpandEnv(item.file));
         icon.reset(LocatedIcon(file, size));
