@@ -37,6 +37,10 @@ QLaunch stays out of sight. Move the mouse into the screen corner you chose (bot
 - The **caption** shows where you are, such as `Game › Solo`.
 - Go back with a click on `‹ Game`, a right-click on the tab bar, `Esc`, or the mouse back button.
 
+### Search
+
+Just start typing while the window is open. Buttons from every page and sub-page whose name (or file name) contains the text take the place of the buttons, and the caption shows how many were found. Press `Enter` to start the highlighted one (`Ctrl+Enter` as administrator), move with the arrow keys, and press `Esc` to clear the search. Input methods such as Chinese work too.
+
 ### Buttons
 
 - Drag files, folders or shortcuts from Explorer onto the window to add them. This PC, Control Panel, Recycle Bin and other system items work too.
@@ -137,6 +141,10 @@ QLaunch 平时不占地方。鼠标移到设定的屏幕角落（默认左下角
 - 带 **`›`** 的标签有二级页面。点它后，同一个标签栏换成高亮的 **`‹ Game`** 返回标签加上它的二级标签，窗口大小始终不变。
 - **标题栏**显示当前位置，例如 `Game › Solo`。
 - 返回一级标签：点 `‹ Game`、右键标签栏、按 `Esc`，或鼠标侧键“后退”。
+
+### 搜索
+
+窗口打开时直接打字就能搜。所有页面和二级页面里，名称（或文件名）包含这些字的按钮会显示在按钮区，标题栏显示找到几个。`回车` 启动高亮的那个（`Ctrl+回车` 以管理员身份运行），方向键移动，`Esc` 清空搜索。中文输入法也能用。
 
 ### 按钮
 

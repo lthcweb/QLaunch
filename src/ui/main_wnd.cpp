@@ -3,6 +3,7 @@
 
 #include <windowsx.h>
 #include <commctrl.h>
+#include <imm.h>
 #include <shellapi.h>
 
 #include <algorithm>
@@ -178,7 +179,17 @@ LRESULT MainWnd::HandleMessage(UINT msg, WPARAM wp, LPARAM lp) {
             ScreenToClient(hwnd_, &pt);
             OnWheel(pt, GET_WHEEL_DELTA_WPARAM(wp));
             return 0;
+        case WM_CHAR: OnChar((wchar_t)wp); return 0;
+        case WM_IME_STARTCOMPOSITION:
+            // the input method's composition window goes to the search box
+            if (HIMC imc = ImmGetContext(hwnd_)) {
+                COMPOSITIONFORM cf{CFS_POINT, POINT{layout_.search.left, layout_.search.top}, {}};
+                ImmSetCompositionWindow(imc, &cf);
+                ImmReleaseContext(hwnd_, imc);
+            }
+            break;
         case WM_KEYDOWN:
+            if (OnSearchKey((UINT)wp)) return 0;
             if (wp == VK_ESCAPE) {
                 if (drilled_) CloseSubs();
                 else Hide();
@@ -347,6 +358,7 @@ void MainWnd::Hide() {
     hover_ = pressed_ = dropTarget_ = Hit{};
     if (GetCapture() == hwnd_) ReleaseCapture();
     ShowWindow(hwnd_, SW_HIDE);
+    StopSearch();
 
     RECT wr;
     GetWindowRect(hwnd_, &wr);
@@ -459,6 +471,7 @@ void MainWnd::Relayout() {
     RECT rc;
     GetClientRect(hwnd_, &rc);
     ComputeLayout(layout_, rc.right, rc.bottom, in, *skin_);
+    if (Searching()) PlaceResults();
 
     // the scroll position can't go past the content
     int needRows = CurrentView().RowCount();

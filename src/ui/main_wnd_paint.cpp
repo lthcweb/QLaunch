@@ -4,6 +4,9 @@
 #include <commctrl.h>
 
 #include <algorithm>
+#include <cmath>
+
+#include "i18n/i18n.h"
 
 namespace {
 
@@ -15,6 +18,33 @@ RECT Intersect(const RECT& a, const RECT& b) {
 
 RECT Shrink(const RECT& r, const RECT& m) {
     return RECT{r.left + m.left, r.top + m.top, r.right - m.right, r.bottom - m.bottom};
+}
+
+// A magnifying glass in the given colour: a ring with a handle to the bottom right. Drawn from its geometry,
+// 4x4 samples per pixel, so it is crisp at any size and needs no icon font.
+IconPixels SearchGlyph(int size, COLORREF color) {
+    IconPixels g;
+    g.size = size;
+    g.px.resize((size_t)size * size);
+    const float c = size * 0.42f, r = size * 0.28f, half = std::max(1.0f, size * 0.07f);
+    const float h0 = c + r * 0.7071f, h1 = size * 0.92f;  // handle along the diagonal
+    auto inside = [&](float x, float y) {
+        float d = std::sqrt((x - c) * (x - c) + (y - c) * (y - c));
+        if (std::fabs(d - r) <= half) return true;
+        float t = (x + y) / 2;  // projection onto the diagonal x = y
+        return t >= h0 && t <= h1 && std::fabs(x - y) * 0.7071f <= half * 1.2f;
+    };
+    for (int y = 0; y < size; ++y)
+        for (int x = 0; x < size; ++x) {
+            int hits = 0;
+            for (int sy = 0; sy < 4; ++sy)
+                for (int sx = 0; sx < 4; ++sx) hits += inside(x + (sx + 0.5f) / 4, y + (sy + 0.5f) / 4);
+            uint32_t a = hits * 255 / 16;
+            auto ch = [a](int v) { return (uint32_t)(v * a / 255); };
+            g.px[(size_t)y * size + x] = (a << 24) | (ch(GetRValue(color)) << 16) | (ch(GetGValue(color)) << 8) |
+                                         ch(GetBValue(color));
+        }
+    return g;
 }
 
 }  // namespace
@@ -74,13 +104,19 @@ void MainWnd::PaintCaption() {
     const RECT& cap = layout_.caption;
     skin_->Draw(canvas_, Part::Caption, kNormal, cap);
 
-    // caption: the page name, or "page › sub-page" on a sub-page
+    // caption: the page name, "page › sub-page" on a sub-page, or how many buttons the search found
     const Page& page = app_.store.pages[page_];
     std::wstring title = page.name;
     if (sub_ >= 0) title += L"  ›  " + page.subs[sub_].name;
+    if (Searching()) {
+        title = results_.cells.empty() ? T(L"search.none", L"No matches") : T(L"search.found", L"%d found");
+        size_t at = title.find(L"%d");
+        if (at != std::wstring::npos) title.replace(at, 2, std::to_wstring(results_.cells.size()));
+    }
     TextStyle style = skin_->Text(Part::Caption, kNormal);
-    canvas_.Text(cap, title.c_str(), style, FontFor(style),
+    canvas_.Text(layout_.title, title.c_str(), style, FontFor(style),
                  DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+    PaintSearch();
 
     auto btnState = [&](HitKind k) {
         int s = kNormal;
@@ -91,6 +127,36 @@ void MainWnd::PaintCaption() {
     int pin = btnState(HitKind::Pin) | (app_.settings.pinned ? kSelected : 0);
     skin_->Draw(canvas_, Part::PinButton, pin, layout_.pinBtn);
     skin_->Draw(canvas_, Part::CloseButton, btnState(HitKind::Close), layout_.closeBtn);
+}
+
+// The search box: a magnifying glass, and while searching the text with a caret and an underline. It is drawn
+// by hand rather than being an edit control, because a layered window (image skins) can't show child windows.
+void MainWnd::PaintSearch() {
+    const RECT& box = layout_.search;
+    if (IsRectEmpty(&box)) return;
+    TextStyle style = skin_->Text(Part::Caption, kNormal);
+    HFONT font = FontFor(style);
+    const int boxH = box.bottom - box.top;
+    const int glyph = std::max(8, std::min(boxH - MulDiv(4, dpi_, 96), MulDiv(14, dpi_, 96)));
+    const int gap = MulDiv(4, dpi_, 96), line = std::max(1, MulDiv(1, dpi_, 96));
+
+    // the glyph sits at the right end while idle and moves to the left of the text while searching
+    bool searching = Searching();
+    int gx = searching ? box.left : box.right - glyph;
+    int alpha = searching || hover_.kind == HitKind::Search ? 255 : 150;
+    canvas_.Blend(SearchGlyph(glyph, style.color), gx, box.top + (boxH - glyph) / 2, alpha);
+    if (!searching) return;
+
+    RECT tr{box.left + glyph + gap, box.top, box.right, box.bottom};
+    int textW = TextWidth(font, query_);
+    int avail = tr.right - tr.left - gap;
+    // a long query shows its end, where the typing happens
+    canvas_.Text(tr, query_.c_str(), style, font,
+                 (textW > avail ? DT_RIGHT : DT_LEFT) | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+    int caretX = std::min(tr.left + textW, tr.right - gap) + 1;
+    int textTop = box.top + (boxH - textH_) / 2;
+    canvas_.Fill(RECT{caretX, textTop, caretX + line, textTop + textH_}, style.color);
+    canvas_.Fill(RECT{box.left, box.bottom - line, box.right, box.bottom}, style.color);
 }
 
 void MainWnd::PaintTabs() {
@@ -147,16 +213,15 @@ void MainWnd::PaintCells() {
     const int textGap = MulDiv(2, dpi_, 96);
 
     for (int slot = 0; slot < slots; ++slot) {
-        Pos pos = RefForSlot(slot).pos;
+        Pos pos = ViewPos(slot);
         RECT rc = layout_.Cell(slot);
         Hit h{HitKind::Cell, slot};
+        int idx = view.Find(pos);
         int s = kNormal;
-        if (hover_ == h) s |= kHot;
+        if (hover_ == h || (Searching() && idx >= 0 && idx == selected_)) s |= kHot;
         if (pressed_ == h && hover_ == h && !dragging_) s |= kPressed;
         if ((dragging_ || fileDrag_) && dropTarget_ == h) s |= kDropTarget;
         skin_->Draw(canvas_, Part::Cell, s, rc);
-
-        int idx = view.Find(pos);
         if (idx < 0) continue;
         const Item& it = view.cells[idx].item;
         bool isDragSource = dragging_ && dragFrom_.page == page_ && dragFrom_.sub == sub_ &&

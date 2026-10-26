@@ -26,7 +26,7 @@ target_compile_definitions(QLaunch PRIVATE
     UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX
     _WIN32_WINNT=0x0601 _HAS_EXCEPTIONS=0)
 target_link_libraries(QLaunch PRIVATE
-    user32 gdi32 msimg32 shell32 ole32 comctl32 comdlg32 advapi32 shlwapi wininet)
+    user32 gdi32 msimg32 shell32 ole32 comctl32 comdlg32 advapi32 shlwapi wininet imm32)
 
 if(MSVC)
     # No exceptions, no RTTI, read sources as UTF-8

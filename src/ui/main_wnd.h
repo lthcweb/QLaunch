@@ -3,7 +3,7 @@
 // The implementation is split over three files:
 //   main_wnd.cpp        window messages, show/hide, sizes
 //   main_wnd_paint.cpp  drawing
-//   main_wnd_edit.cpp   clicks, drag and drop, context menus, editing
+//   main_wnd_edit.cpp   clicks, drag and drop, context menus, editing, search
 #pragma once
 
 #include "app.h"
@@ -78,6 +78,7 @@ private:
     void Paint(HDC target);
     void PaintLayered();
     void PaintCaption();
+    void PaintSearch();
     void PaintTabs();
     void PaintCells();
     void LoadIcons();             // read the current page's icons from the cache; missing ones go to the background thread
@@ -87,9 +88,12 @@ private:
     int TextWidth(HFONT font, const std::wstring& s) const;
 
     // main_wnd_edit.cpp
-    Page& CurrentView();
-    CellRef RefForSlot(int slot) const;
+    Page& CurrentView();          // the page or sub-page shown, or the search results
+    const Page& CurrentView() const;
+    Pos ViewPos(int slot) const;  // position in the current view of a visible cell
+    CellRef RefForSlot(int slot) const;  // where the button in a visible cell lives (page = -1 for none)
     Item* ItemAt(const CellRef& ref);
+    void RefreshView();           // the view's content changed: scroll to the top, lay out, reload icons
     void SwitchPage(int page);    // switch to a page; the bar shows the top-level tabs
     void OpenPage(int page);      // top-level tab clicked: switch to it and, if it has sub-pages, show its sub-tabs in the bar
     void CloseSubs();             // the bar goes back to the top-level tabs
@@ -119,6 +123,15 @@ private:
     void DragOver(POINT pt) override;
     void DragEnd() override;
     void DropItems(POINT pt, std::vector<DroppedItem>& items) override;
+    // Search: typing on the window searches the buttons of every page and sub-page by name and file name; the
+    // results replace the buttons shown until the search is cleared (Esc) or another tab is chosen
+    bool Searching() const { return !query_.empty(); }
+    void OnChar(wchar_t ch);
+    bool OnSearchKey(UINT vk);    // Esc, Backspace, Enter and arrows while searching; true when handled
+    void RunSearch();             // the query changed: find the matches and show them
+    void PlaceResults();          // lay the results out row by row for the current column count
+    bool StopSearch();            // forgets the search without redrawing; true if there was one
+    void EndSearch();             // clears the search and shows the page again
     void ShowSettings();
     static void PreviewSettings(void* self, const Settings& s);  // the skin changed in the settings dialog
     void DataChanged();           // data changed: save, lay out again, reload icons
@@ -149,6 +162,12 @@ private:
     bool drilled_ = false;        // the bar is showing the sub-tabs of page_
     int scrollRow_ = 0;           // scrolled rows when there are more cells than fit
     std::vector<IconPixels> icons_;  // icons of the buttons in the current view, same index as Page::cells
+
+    std::wstring query_;          // search text; empty when not searching
+    Page results_;                // matching buttons, laid out row by row
+    std::vector<CellRef> found_;  // where each result lives, same index as results_.cells
+    int resultCols_ = 0;          // column count results_ was laid out for
+    int selected_ = 0;            // result started by Enter, moved with the arrow keys
 
     bool visible_ = false;
     bool entered_ = false;        // the mouse has been inside since this show (only then does leaving hide the window)

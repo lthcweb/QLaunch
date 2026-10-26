@@ -2,7 +2,7 @@
 // own.
 //
 // Window structure (tabs on the left):
-//   ┌ top frame (with caption) ── pin  x ┐
+//   ┌ top frame (caption · search) pin  x ┐
 //   │ tabs │ grid of cells               │
 //   └ bottom frame ──────────────────────┘
 // Frame widths and the offsets and margins of each area come from the skin (see SkinMetrics in skin.h).
@@ -18,7 +18,7 @@
 
 // Sizes from the settings, in pixels scaled for DPI
 struct Metrics {
-    int caption, tabW, tabH, cellW, cellH, gap, pad, iconSize, textPad;
+    int caption, tabW, tabH, cellW, cellH, gap, pad, iconSize, textPad, searchW;
 
     static Metrics From(const Settings& s, int dpi);
 };
@@ -32,6 +32,7 @@ struct Sizing {
 
 struct Layout {
     RECT client{}, dragBar{}, caption{}, closeBtn{}, pinBtn{};
+    RECT title{}, search{};   // inside the caption: the title text, and the search box at its right end
     RECT tabPanel{}, tabArea{};    // background panel of the tab bar, area the tabs are laid out in
     RECT gridPanel{}, grid{};
     std::vector<RECT> tabs;   // may extend past tabArea; clipped when drawn
@@ -56,7 +57,7 @@ SIZE WindowSizeFor(const Sizing& s, int cols, int rows);
 void GridFromWindowSize(const Sizing& s, int w, int h, int& cols, int& rows);
 
 // Tab: top-level tab; Parent: the "‹ parent page" at the top of the sub-tab bar; SubTab: a sub-tab
-enum class HitKind { None, Caption, Close, Pin, Tab, Parent, SubTab, Cell };
+enum class HitKind { None, Caption, Close, Pin, Search, Tab, Parent, SubTab, Cell };
 struct Hit {
     HitKind kind = HitKind::None;
     int index = -1;  // tab index or cell slot

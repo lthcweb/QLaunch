@@ -60,23 +60,47 @@ UINT RunMenu(HMENU menu, HWND owner, POINT screenPt) {
 // Current view
 
 Page& MainWnd::CurrentView() {
-    Page& p = app_.store.pages[page_];
+    return const_cast<Page&>(static_cast<const MainWnd*>(this)->CurrentView());
+}
+
+const Page& MainWnd::CurrentView() const {
+    if (Searching()) return results_;
+    const Page& p = app_.store.pages[page_];
     return (sub_ >= 0 && sub_ < (int)p.subs.size()) ? p.subs[sub_] : p;
 }
 
+Pos MainWnd::ViewPos(int slot) const {
+    return Pos{slot / layout_.cols + scrollRow_, slot % layout_.cols};
+}
+
 MainWnd::CellRef MainWnd::RefForSlot(int slot) const {
-    return CellRef{page_, sub_, Pos{slot / layout_.cols + scrollRow_, slot % layout_.cols}};
+    if (!Searching()) return CellRef{page_, sub_, ViewPos(slot)};
+    int idx = results_.Find(ViewPos(slot));
+    return idx < 0 ? CellRef{} : found_[idx];
 }
 
 Item* MainWnd::ItemAt(const CellRef& ref) {
+    if (ref.page < 0) return nullptr;
     Page* p = &app_.store.pages[ref.page];
     if (ref.sub >= 0) p = &p->subs[ref.sub];
     return p->At(ref.pos);
 }
 
+void MainWnd::RefreshView() {
+    scrollRow_ = 0;
+    ReleaseIcons();
+    Relayout();
+    LoadIcons();
+    Redraw();
+}
+
 void MainWnd::SwitchPage(int page) {
     if (page < 0 || page >= (int)app_.store.pages.size()) return;
-    if (page == page_ && sub_ < 0 && !drilled_) return;
+    bool searched = StopSearch();  // choosing a tab ends the search
+    if (page == page_ && sub_ < 0 && !drilled_) {
+        if (searched) RefreshView();
+        return;
+    }
     page_ = page;
     sub_ = -1;
     drilled_ = false;
@@ -97,7 +121,10 @@ void MainWnd::OpenPage(int page) {
 }
 
 void MainWnd::CloseSubs() {
-    if (!drilled_) return;
+    if (!drilled_) {
+        if (StopSearch()) RefreshView();
+        return;
+    }
     drilled_ = false;
     if (sub_ >= 0) {
         SwitchSub(-1);
@@ -121,6 +148,10 @@ void MainWnd::ResetHover() {
 }
 
 void MainWnd::SwitchSub(int sub) {
+    if (StopSearch() && sub == sub_) {
+        RefreshView();
+        return;
+    }
     if (sub == sub_) return;
     sub_ = sub;
     scrollRow_ = 0;
@@ -136,6 +167,7 @@ void MainWnd::DataChanged() {
     page_ = std::max(0, std::min(page_, (int)pages.size() - 1));
     if (sub_ >= (int)pages[page_].subs.size()) sub_ = -1;
     if (pages[page_].subs.empty()) drilled_ = false;
+    if (Searching()) RunSearch();  // a result was edited or deleted: search again
     ReleaseIcons();
     UpdateWindowSize();
     Relayout();
@@ -153,7 +185,7 @@ void MainWnd::OnMouseMove(POINT pt, bool leftDown) {
     }
 
     // holding a cell and moving past the system threshold starts a drag
-    if (leftDown && !dragging_ && pressed_.kind == HitKind::Cell &&
+    if (leftDown && !dragging_ && !Searching() && pressed_.kind == HitKind::Cell &&
         (abs(pt.x - downPt_.x) > GetSystemMetrics(SM_CXDRAG) ||
          abs(pt.y - downPt_.y) > GetSystemMetrics(SM_CYDRAG))) {
         CellRef ref = RefForSlot(pressed_.index);
@@ -218,6 +250,9 @@ void MainWnd::Click(const Hit& hit) {
         case HitKind::Pin:
             app_.settings.pinned = !app_.settings.pinned;
             app_.SaveSettings();
+            break;
+        case HitKind::Search:
+            if (Searching()) EndSearch();
             break;
         case HitKind::Tab: OpenPage(hit.index); break;
         case HitKind::Parent: CloseSubs(); break;
@@ -313,6 +348,7 @@ void MainWnd::DragEnd() {
 }
 
 void MainWnd::DropItems(POINT pt, std::vector<DroppedItem>& items) {
+    if (StopSearch()) RefreshView();  // dropped files go to the page, not into the results
     Hit h = HitTest(layout_, pt);
     Page* page = &CurrentView();
     Pos cell;  // target cell; row = -1 means not dropped on a cell
@@ -368,6 +404,10 @@ void MainWnd::OnContextMenu(POINT pt) {
 void MainWnd::CellMenu(const Hit& h, POINT sp) {
     ModalGuard guard(*this);
     CellRef ref = RefForSlot(h.index);
+    if (Searching() && !ItemAt(ref)) {  // an empty cell among the results belongs to no page
+        MainMenu(sp);
+        return;
+    }
     HMENU menu = CreatePopupMenu();
     if (const Item* it = ItemAt(ref)) {
         AddMenu(menu, kCmdOpen, T(L"menu.open", L"Open"));
@@ -620,6 +660,108 @@ void MainWnd::ShowSettings() {
 }
 
 // ---------------------------------------------------------------------------
+// Search
+
+namespace {
+
+std::wstring Lower(std::wstring s) {
+    if (!s.empty()) CharLowerBuffW(&s[0], (DWORD)s.size());
+    return s;
+}
+
+}  // namespace
+
+void MainWnd::OnChar(wchar_t ch) {
+    // control characters (Esc, Backspace, Enter, Ctrl+letter) are handled as keys; a search doesn't start with
+    // a space
+    if (ch < L' ' || ch == 0x7F || (ch == L' ' && query_.empty())) return;
+    query_ += ch;
+    RunSearch();
+}
+
+bool MainWnd::OnSearchKey(UINT vk) {
+    if (!Searching()) return false;
+    int n = (int)results_.cells.size(), cols = std::max(1, resultCols_);
+    switch (vk) {
+        case VK_ESCAPE: EndSearch(); return true;
+        case VK_BACK:
+            query_.pop_back();
+            if (Searching()) RunSearch();
+            else EndSearch();
+            return true;
+        case VK_RETURN:
+            if (selected_ < n) {
+                if (Item* it = ItemAt(found_[selected_])) Launch(*it, GetKeyState(VK_CONTROL) < 0);
+            }
+            return true;
+        case VK_LEFT: selected_ = std::max(0, selected_ - 1); break;
+        case VK_RIGHT: selected_ = std::min(n - 1, selected_ + 1); break;
+        case VK_UP: if (selected_ >= cols) selected_ -= cols; break;
+        case VK_DOWN: if (selected_ + cols < n) selected_ += cols; break;
+        default: return false;
+    }
+    // keep the selected result in view
+    int row = n ? selected_ / cols : 0;
+    if (row < scrollRow_) scrollRow_ = row;
+    else if (row >= scrollRow_ + layout_.rows) scrollRow_ = row - layout_.rows + 1;
+    Relayout();
+    Redraw();
+    return true;
+}
+
+// A button matches when its name or its file name contains the text, ignoring case. Names that start with the
+// text come first, then names that contain it, then file names; otherwise in page order.
+void MainWnd::RunSearch() {
+    std::wstring q = Lower(query_);
+    std::vector<std::pair<int, CellRef>> hits;
+    auto scan = [&](const Page& p, int page, int sub) {
+        for (const Cell& c : p.cells) {
+            std::wstring name = Lower(c.item.name);
+            size_t at = name.find(q);
+            int rank = at == 0 ? 0 : at != std::wstring::npos ? 1 : -1;
+            if (rank < 0 && !IsUrl(c.item.file) && Lower(FileTitle(c.item.file)).find(q) != std::wstring::npos)
+                rank = 2;
+            if (rank >= 0) hits.push_back({rank, CellRef{page, sub, c.pos}});
+        }
+    };
+    const auto& pages = app_.store.pages;
+    for (int i = 0; i < (int)pages.size(); ++i) {
+        scan(pages[i], i, -1);
+        for (int j = 0; j < (int)pages[i].subs.size(); ++j) scan(pages[i].subs[j], i, j);
+    }
+    std::stable_sort(hits.begin(), hits.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+
+    found_.clear();
+    results_.cells.clear();
+    for (auto& h : hits) {
+        found_.push_back(h.second);
+        results_.cells.push_back(Cell{Pos{}, *ItemAt(h.second)});
+    }
+    resultCols_ = 0;
+    selected_ = 0;
+    RefreshView();  // Relayout places the results for the current column count
+}
+
+void MainWnd::PlaceResults() {
+    if (resultCols_ == layout_.cols) return;
+    resultCols_ = layout_.cols;
+    for (int i = 0; i < (int)results_.cells.size(); ++i)
+        results_.cells[i].pos = Pos{i / resultCols_, i % resultCols_};
+}
+
+bool MainWnd::StopSearch() {
+    if (!Searching()) return false;
+    query_.clear();
+    results_.cells.clear();
+    found_.clear();
+    return true;
+}
+
+void MainWnd::EndSearch() {
+    if (StopSearch()) RefreshView();
+}
+
+// ---------------------------------------------------------------------------
 // Tooltips
 
 void MainWnd::UpdateTooltip() {
@@ -627,10 +769,11 @@ void MainWnd::UpdateTooltip() {
 }
 
 std::wstring MainWnd::TooltipText() const {
+    if (hover_.kind == HitKind::Search && !Searching())
+        return T(L"search.tip", L"Type on the window to search all buttons");
     if (hover_.kind != HitKind::Cell || dragging_) return {};
-    const Page& p = app_.store.pages[page_];
-    const Page& view = (sub_ >= 0 && sub_ < (int)p.subs.size()) ? p.subs[sub_] : p;
-    int idx = view.Find(RefForSlot(hover_.index).pos);
+    const Page& view = CurrentView();
+    int idx = view.Find(ViewPos(hover_.index));
     if (idx < 0) return {};
     const Item& it = view.cells[idx].item;
     return it.tip.empty() ? it.name + L"\n" + it.file : it.tip;

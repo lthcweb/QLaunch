@@ -81,6 +81,7 @@ Metrics Metrics::From(const Settings& s, int dpi) {
     m.pad = px(6);
     m.iconSize = px(s.iconSize);
     m.textPad = px(8);
+    m.searchW = px(150);
     return m;
 }
 
@@ -101,6 +102,17 @@ void ComputeLayout(Layout& l, int width, int height, const LayoutInput& in, cons
 
     l.dragBar = RECT{0, 0, width, k.frame.top};
     skin.PlaceChrome(width, height, l.caption, l.closeBtn, l.pinBtn);
+    // the search box takes the right end of the caption, left of the pin and close buttons when they sit on the
+    // caption, and at most half of it
+    int right = l.caption.right;
+    for (const RECT* b : {&l.pinBtn, &l.closeBtn})
+        if (!IsRectEmpty(b) && b->left > l.caption.left && b->left < right && b->top < l.caption.bottom &&
+            b->bottom > l.caption.top)
+            right = b->left;
+    right -= m.pad;
+    int left = std::max(right - m.searchW, (int)(l.caption.left + right) / 2);
+    l.search = RECT{left, l.caption.top, right, l.caption.bottom};
+    l.title = RECT{l.caption.left, l.caption.top, left, l.caption.bottom};
 
     // inside = window - frame, then split into the tab area and the button area
     RECT inner{k.frame.left, k.frame.top, width - k.frame.right, height - k.frame.bottom};
@@ -142,6 +154,7 @@ void GridFromWindowSize(const Sizing& s, int w, int h, int& cols, int& rows) {
 Hit HitTest(const Layout& l, POINT pt) {
     if (PtInRect(&l.closeBtn, pt)) return {HitKind::Close, 0};
     if (PtInRect(&l.pinBtn, pt)) return {HitKind::Pin, 0};
+    if (PtInRect(&l.search, pt)) return {HitKind::Search, 0};
     for (int i = 0; i < (int)l.tabs.size(); ++i) {
         RECT r;
         if (!IntersectRect(&r, &l.tabs[i], &l.tabArea) || !PtInRect(&r, pt)) continue;
