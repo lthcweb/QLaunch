@@ -6,8 +6,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Link the CRT statically (/MT) so the exe needs no VC++ runtime
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
-# The exe goes to out/bin/<config>; intermediate files go to out/temp/<preset> (see CMakePresets.json)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/out/bin/$<CONFIG>")
+# The presets put the exe in out/bin/<preset> (x64-release, x86-release...) and intermediate files
+# in out/temp/<preset> (see CMakePresets.json); without a preset it goes to out/bin/<config>
+if(QL_OUTPUT_DIR)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${QL_OUTPUT_DIR}")
+else()
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/out/bin/$<CONFIG>")
+endif()
 
 file(GLOB_RECURSE QL_SOURCES CONFIGURE_DEPENDS src/*.cpp src/*.h)
 add_executable(QLaunch WIN32 ${QL_SOURCES} res/app.rc)

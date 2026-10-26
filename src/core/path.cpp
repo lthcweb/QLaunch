@@ -26,7 +26,27 @@ std::wstring ExpandEnv(const std::wstring& path) {
 std::wstring ResolvePath(const std::wstring& path) {
     std::wstring out = ExpandEnv(path);
     if (!out.empty() && PathIsRelativeW(out.c_str())) out = AppDir() + out;
-    return out;
+    return NativePath(out);
+}
+
+std::wstring NativePath(const std::wstring& path) {
+#ifdef _WIN64
+    return path;
+#else
+    static const bool wow64 = [] {
+        BOOL on = FALSE;
+        return IsWow64Process(GetCurrentProcess(), &on) && on;
+    }();
+    if (!wow64) return path;
+    wchar_t win[MAX_PATH];
+    UINT n = GetWindowsDirectoryW(win, MAX_PATH);
+    if (n == 0 || n >= MAX_PATH) return path;
+    std::wstring windir(win, n);
+    std::wstring system32 = windir + L"\\System32\\";
+    if (path.size() <= system32.size() || _wcsnicmp(path.c_str(), system32.c_str(), system32.size()) != 0)
+        return path;
+    return windir + L"\\Sysnative\\" + path.substr(system32.size());
+#endif
 }
 
 std::wstring DirOf(const std::wstring& path) {

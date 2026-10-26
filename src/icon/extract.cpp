@@ -154,7 +154,7 @@ HICON LocatedIcon(const std::wstring& path, int size) {
 
 uint64_t IconKey(const Item& item, int size) {
     bool custom = !item.icon.empty();
-    std::wstring path = custom ? ResolvePath(item.icon) : ExpandEnv(item.file);
+    std::wstring path = custom ? ResolvePath(item.icon) : NativePath(ExpandEnv(item.file));
     CharLowerBuffW(&path[0], (DWORD)path.size());
     int index = custom ? item.iconIndex : 0;
     uint64_t mtime = LastWriteTime(path);
@@ -169,7 +169,7 @@ IconPixels ExtractIconPixels(const Item& item, int size) {
     IconHandle icon;
     if (!item.icon.empty()) icon.reset(FileIcon(ResolvePath(item.icon), item.iconIndex, size));
     if (!icon && !item.file.empty()) {
-        std::wstring file = ExpandEnv(item.file);
+        std::wstring file = NativePath(ExpandEnv(item.file));
         icon.reset(LocatedIcon(file, size));
         if (!icon) return ShellIconPixels(file, size);
     }

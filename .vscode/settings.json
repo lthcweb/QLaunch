@@ -1,5 +1,5 @@
 {
-  // Use CMakePresets.json (x64-debug / x64-release)
+  // Use CMakePresets.json (x64-debug / x64-release / x86-release)
   "cmake.useCMakePresets": "always",
   "cmake.configureOnOpen": true,
   // MSVC prints localized messages in the system code page (e.g. GBK); decode them correctly

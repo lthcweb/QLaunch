@@ -1,5 +1,5 @@
 {
-  // Ctrl+Shift+B builds the current preset with CMake Tools (pick x64-debug / x64-release in the status bar),
+  // Ctrl+Shift+B builds the current preset with CMake Tools (pick x64-debug / x64-release / x86-release in the status bar),
   // the same as the status bar "Build" button or F7. CMake Tools finds Visual Studio and sets up the environment itself.
   "version": "2.0.0",
   "tasks": [

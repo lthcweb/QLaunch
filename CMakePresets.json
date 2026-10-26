@@ -3,16 +3,16 @@
   "cmakeMinimumRequired": { "major": 3, "minor": 20, "patch": 0 },
   "configurePresets": [
     {
-      "name": "x64-base",
+      "name": "msvc-base",
       "hidden": true,
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/out/temp/${presetName}",
-      "architecture": { "value": "x64", "strategy": "external" },
       "toolset": { "value": "host=x64", "strategy": "external" },
       "cacheVariables": {
         "CMAKE_CXX_COMPILER": "cl.exe",
         "CMAKE_RC_COMPILER": "rc.exe",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "QL_OUTPUT_DIR": "${sourceDir}/out/bin/${presetName}"
       },
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" },
       "vendor": {
@@ -22,13 +22,22 @@
     {
       "name": "x64-debug",
       "displayName": "x64 Debug (MSVC + Ninja)",
-      "inherits": "x64-base",
+      "inherits": "msvc-base",
+      "architecture": { "value": "x64", "strategy": "external" },
       "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
     },
     {
       "name": "x64-release",
       "displayName": "x64 Release (MSVC + Ninja)",
-      "inherits": "x64-base",
+      "inherits": "msvc-base",
+      "architecture": { "value": "x64", "strategy": "external" },
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "x86-release",
+      "displayName": "x86 Release (MSVC + Ninja)",
+      "inherits": "msvc-base",
+      "architecture": { "value": "x86", "strategy": "external" },
       "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
     },
     {
@@ -40,7 +49,8 @@
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_SYSTEM_NAME": "Windows",
         "CMAKE_CXX_COMPILER": "x86_64-w64-mingw32-g++",
-        "CMAKE_RC_COMPILER": "x86_64-w64-mingw32-windres"
+        "CMAKE_RC_COMPILER": "x86_64-w64-mingw32-windres",
+        "QL_OUTPUT_DIR": "${sourceDir}/out/bin/${presetName}"
       },
       "condition": { "type": "notEquals", "lhs": "${hostSystemName}", "rhs": "Windows" }
     }
@@ -48,6 +58,7 @@
   "buildPresets": [
     { "name": "x64-debug", "configurePreset": "x64-debug" },
     { "name": "x64-release", "configurePreset": "x64-release" },
+    { "name": "x86-release", "configurePreset": "x86-release" },
     { "name": "mingw", "configurePreset": "mingw-cross" }
   ]
 }

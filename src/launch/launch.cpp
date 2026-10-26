@@ -10,8 +10,8 @@
 bool LaunchItem(HWND owner, const Item& item, bool forceAdmin) {
     if (item.file.empty()) return false;
     if (IsBuiltinCommand(item.file)) return RunBuiltinCommand(owner, item.file);
-    std::wstring file = ExpandEnv(item.file);
-    std::wstring dir = ExpandEnv(item.dir);
+    std::wstring file = NativePath(ExpandEnv(item.file));
+    std::wstring dir = NativePath(ExpandEnv(item.dir));
     // with no working folder, use the program's own folder; many old programs rely on that
     if (dir.empty() && !StartsWithNoCase(file, L"shell:")) dir = DirOf(file);
 
