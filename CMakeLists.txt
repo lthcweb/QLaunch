@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(QLaunch LANGUAGES CXX RC)
+project(QLaunch VERSION 1.1.0 LANGUAGES CXX RC)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -21,7 +21,9 @@ add_executable(QLaunch WIN32 ${QL_SOURCES} res/app.rc)
 set_source_files_properties(res/app.rc PROPERTIES OBJECT_DEPENDS
     "${CMAKE_SOURCE_DIR}/res/app.ico;${CMAKE_SOURCE_DIR}/res/app.manifest")
 
-target_include_directories(QLaunch PRIVATE src res)
+# The version resource reads the version above from the generated version.h
+configure_file(res/version.h.in version.h @ONLY)
+target_include_directories(QLaunch PRIVATE src res ${CMAKE_CURRENT_BINARY_DIR})
 target_compile_definitions(QLaunch PRIVATE
     UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX
     _WIN32_WINNT=0x0601 _HAS_EXCEPTIONS=0)
@@ -45,7 +47,17 @@ else()
         $<$<CONFIG:Release,MinSizeRel>:-s -Wl,--gc-sections>)
 endif()
 
-# Copy the language files, skins and icons next to the exe so debug runs work as-is
+# Copy the language files, skins and icons next to the exe so debug runs work as-is. Release builds are
+# also packed into out/release/QLaunch-<version>-<x64|x86>.zip, ready to upload to a GitHub release.
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(QL_ARCH x64)
+else()
+    set(QL_ARCH x86)
+endif()
 add_custom_command(TARGET QLaunch POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_SOURCE_DIR}/dist $<TARGET_FILE_DIR:QLaunch>)
+            ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:QLaunch>
+    COMMAND ${CMAKE_COMMAND} -DCONFIG=$<CONFIG> -DEXE=$<TARGET_FILE:QLaunch>
+            -DASSETS=${CMAKE_SOURCE_DIR}/assets -DSTAGE=${CMAKE_CURRENT_BINARY_DIR}/package
+            -DZIP=${CMAKE_SOURCE_DIR}/out/release/QLaunch-${PROJECT_VERSION}-${QL_ARCH}.zip
+            -P ${CMAKE_SOURCE_DIR}/cmake/package.cmake)

@@ -1,4 +1,4 @@
-"""Generates the bundled skins (skin.xml + PNG images) into dist/skins/.
+"""Generates the bundled skins (skin.xml + PNG images) into assets/skins/.
 
 Requires Python 3.8+ and Pillow (pip install pillow).
 
@@ -7,7 +7,7 @@ Usage:
         Regenerate every skin listed in THEMES below.
 
     python tools/make_skin.py NAME COLORS
-        Generate one new skin into dist/skins/NAME/.
+        Generate one new skin into assets/skins/NAME/.
 
 COLORS is either a Realtime Colors link (https://www.realtimecolors.com) or just
 the part after "colors=" in such a link: five hex colours in the order
@@ -31,7 +31,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-SKINS = Path(__file__).resolve().parent.parent / "dist" / "skins"
+SKINS = Path(__file__).resolve().parent.parent / "assets" / "skins"
 SS = 4  # draw at 4x and scale down for antialiased edges
 
 RGB = tuple  # (r, g, b)

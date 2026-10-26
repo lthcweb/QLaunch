@@ -79,7 +79,7 @@ The bundled script [`tools/make_skin.py`](tools/make_skin.py) builds a complete 
 python tools\make_skin.py MySkin "https://www.realtimecolors.com/?colors=ecf0e8-060705-c1cbb1-464365-a37ca8"
 ```
 
-The new skin appears in `dist\skins\MySkin`. Copy that folder into the `skins` folder next to `QLaunch.exe` (or zip its contents as `MySkin.zip`) and choose it in Settings. The five colours are text, background, primary, secondary and accent: buttons use the secondary colour, hovering moves towards the primary, and the selected tab and the pin use the accent.
+The new skin appears in `assets\skins\MySkin`. Copy that folder into the `skins` folder next to `QLaunch.exe` (or zip its contents as `MySkin.zip`) and choose it in Settings. The five colours are text, background, primary, secondary and accent: buttons use the secondary colour, hovering moves towards the primary, and the selected tab and the pin use the accent.
 
 ### Settings
 
@@ -93,7 +93,7 @@ Hot corner and delay, hotkey, where the window opens, language, skin, tab positi
 
 ## Building
 
-Open the folder in VS Code with the CMake Tools extension and Visual Studio 2019/2022 (Desktop development with C++) installed, pick the `x64-release` or `x86-release` preset in the status bar and press `F7`. The exe goes to `out\bin\<preset>`.
+Open the folder in VS Code with the CMake Tools extension and Visual Studio 2019/2022 (Desktop development with C++) installed, pick the `x64-release` or `x86-release` preset in the status bar and press `F7`. The exe goes to `out\bin\<preset>`, and a release build also packs it with the language files, skins and icons into `out\release\QLaunch-<version>-x64.zip` (or `-x86.zip`), ready to upload to a GitHub release. The version number is set in `CMakeLists.txt`.
 
 ## License
 
@@ -184,7 +184,7 @@ Voyage、Sakura、Blaze、Forest、Stone、Glacier、Nebula、Latte 等，另有
 python tools\make_skin.py MySkin "https://www.realtimecolors.com/?colors=ecf0e8-060705-c1cbb1-464365-a37ca8"
 ```
 
-新主题生成在 `dist\skins\MySkin`。把这个文件夹复制到 `QLaunch.exe` 旁边的 `skins` 文件夹里（或把里面的文件打包成 `MySkin.zip`），在设置里选它即可。五个颜色依次是文字、背景、主色、辅色、强调色：按钮用辅色，悬停时往主色靠，选中的标签和图钉用强调色。
+新主题生成在 `assets\skins\MySkin`。把这个文件夹复制到 `QLaunch.exe` 旁边的 `skins` 文件夹里（或把里面的文件打包成 `MySkin.zip`），在设置里选它即可。五个颜色依次是文字、背景、主色、辅色、强调色：按钮用辅色，悬停时往主色靠，选中的标签和图钉用强调色。
 
 ### 设置
 
@@ -198,7 +198,7 @@ python tools\make_skin.py MySkin "https://www.realtimecolors.com/?colors=ecf0e8-
 
 ## 编译
 
-装好 Visual Studio 2019/2022（使用 C++ 的桌面开发）和 VS Code 的 CMake Tools 扩展，用 VS Code 打开本目录，在状态栏选 `x64-release` 或 `x86-release` 预设，按 `F7`。exe 输出在 `out\bin\<预设名>`。
+装好 Visual Studio 2019/2022（使用 C++ 的桌面开发）和 VS Code 的 CMake Tools 扩展，用 VS Code 打开本目录，在状态栏选 `x64-release` 或 `x86-release` 预设，按 `F7`。exe 输出在 `out\bin\<预设名>`；Release 编译还会把 exe 和语言文件、主题、图标一起打包成 `out\release\QLaunch-<版本号>-x64.zip`（或 `-x86.zip`），可以直接上传到 GitHub Release。版本号在 `CMakeLists.txt` 里设置。
 
 ## 许可
 

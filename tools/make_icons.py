@@ -1,5 +1,5 @@
 """Draws the app icon (res/app.ico) and the icons of the built-in commands
-(lock, shut down, empty recycle bin...) into dist/icons/*.ico.
+(lock, shut down, empty recycle bin...) into assets/icons/*.ico.
 
 Requires Python 3.8+ and Pillow (pip install pillow).
 
@@ -27,7 +27,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT = ROOT / "dist" / "icons"
+OUT = ROOT / "assets" / "icons"
 APP_ICON = ROOT / "res" / "app.ico"
 SIZES = [16, 20, 24, 32, 40, 48, 64, 256]
 SUPER = 4

@@ -5,13 +5,14 @@
 #include <windows.h>
 #include <commctrl.h>
 #include "resource.h"
+#include "version.h"
 
 IDI_APP ICON "app.ico"
 1 RT_MANIFEST "app.manifest"
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,1,0,0
- PRODUCTVERSION 0,1,0,0
+ FILEVERSION QL_VERSION_NUM
+ PRODUCTVERSION QL_VERSION_NUM
  FILEOS VOS_NT_WINDOWS32
  FILETYPE VFT_APP
 BEGIN
@@ -20,9 +21,9 @@ BEGIN
         BLOCK "040904B0"
         BEGIN
             VALUE "FileDescription", "QLaunch launcher"
-            VALUE "FileVersion", "0.1.0"
+            VALUE "FileVersion", QL_VERSION_STR
             VALUE "ProductName", "QLaunch"
-            VALUE "ProductVersion", "0.1.0"
+            VALUE "ProductVersion", QL_VERSION_STR
         END
     END
     BLOCK "VarFileInfo"
