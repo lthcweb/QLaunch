@@ -10,7 +10,7 @@
 namespace {
 
 constexpr uint32_t kMagic = 0x43494C51;  // "QLIC"
-constexpr uint32_t kVersion = 4;  // bump when the extraction changes; old caches are discarded and rebuilt
+constexpr uint32_t kVersion = 5;  // bump when the extraction changes; old caches are discarded and rebuilt
 constexpr uint32_t kMaxSize = 256;
 
 struct FileHeader {
