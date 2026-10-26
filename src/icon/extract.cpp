@@ -6,9 +6,12 @@
 #include <shlobj.h>
 #include <shlwapi.h>
 
+#include <algorithm>
+
 #include "core/handle.h"
 #include "core/path.h"
 #include "core/str.h"
+#include "icon/favicon.h"
 
 namespace {
 
@@ -18,8 +21,75 @@ uint64_t Fnv1a(const void* data, size_t len, uint64_t h = 14695981039346656037ul
     return h;
 }
 
-// IID of IImageList, defined here to avoid linking an extra library
+// IIDs defined here to avoid linking an extra library
 const IID kIID_IImageList = {0x46EB5926, 0x582E, 0x4017, {0x9F, 0xDF, 0xE8, 0x99, 0x8D, 0xAA, 0x09, 0x50}};
+const IID kIID_IShellItemImageFactory = {0xbcc18b79, 0xba16, 0x442f, {0x80, 0xc4, 0x8a, 0x59, 0xc3, 0x0c, 0x46, 0x3b}};
+
+// Centres an image in a size x size icon, scaled to fit. Small images are enlarged at most 2x: more only blurs.
+IconPixels FitIcon(const Bitmap& img, int size) {
+    IconPixels out;
+    if (img.Empty()) return out;
+    int longest = std::max(img.w, img.h);
+    int target = std::min(size, longest * 2);
+    int w = std::max(1, img.w * target / longest), h = std::max(1, img.h * target / longest);
+    Bitmap scaled;
+    if (w == img.w && h == img.h) scaled = img;
+    else if (!ScaleImage(img, w, h, scaled)) return out;
+    out.size = size;
+    out.px.assign((size_t)size * size, 0);
+    int x0 = (size - w) / 2, y0 = (size - h) / 2;
+    for (int y = 0; y < h; ++y)
+        std::copy_n(&scaled.px[(size_t)y * w], w, &out.px[(size_t)(y0 + y) * size + x0]);
+    return out;
+}
+
+// The picture the Shell itself shows for an item, at the wanted size. Used for apps from the Start menu (Store
+// apps): the system image lists only have their small, plated logo.
+IconPixels ShellItemImage(const std::wstring& path, int size) {
+    PIDLIST_ABSOLUTE pidl = ParseShellPath(path);
+    if (!pidl) return {};
+    ComPtr<IShellItemImageFactory> factory;
+    HBITMAP hbmp = nullptr;
+    bool ok = SUCCEEDED(SHCreateItemFromIDList(pidl, kIID_IShellItemImageFactory, (void**)factory.put())) &&
+              SUCCEEDED(factory->GetImage(SIZE{size, size}, SIIGBF_ICONONLY, &hbmp));
+    CoTaskMemFree(pidl);
+    if (!ok) return {};
+    GdiObj<HBITMAP> owner(hbmp);
+
+    BITMAP bm{};
+    GetObjectW(hbmp, sizeof(bm), &bm);
+    Bitmap img;
+    img.w = bm.bmWidth;
+    img.h = bm.bmHeight;
+    img.px.resize((size_t)img.w * img.h);
+    BITMAPINFO bi{};
+    bi.bmiHeader.biSize = sizeof(bi.bmiHeader);
+    bi.bmiHeader.biWidth = img.w;
+    bi.bmiHeader.biHeight = -img.h;  // top-down
+    bi.bmiHeader.biPlanes = 1;
+    bi.bmiHeader.biBitCount = 32;
+    HDC screen = GetDC(nullptr);
+    int lines = GetDIBits(screen, hbmp, 0, img.h, img.px.data(), &bi, DIB_RGB_COLORS);
+    ReleaseDC(nullptr, screen);
+    // much smaller than asked means the Shell has nothing better than the image list: use that instead
+    if (lines != img.h || img.Empty() || std::max(img.w, img.h) < size / 2) return {};
+
+    // the alpha may be straight or premultiplied, or missing altogether (all 0): normalise to premultiplied
+    bool anyAlpha = false, straight = false;
+    for (uint32_t p : img.px) {
+        uint32_t a = p >> 24;
+        anyAlpha |= a != 0;
+        straight |= ((p >> 16) & 0xFF) > a || ((p >> 8) & 0xFF) > a || (p & 0xFF) > a;
+    }
+    for (uint32_t& p : img.px) {
+        uint32_t a = anyAlpha ? p >> 24 : 255;
+        if (!anyAlpha || straight) {
+            auto mul = [a](uint32_t c) { return (c * a + 127) / 255; };
+            p = (a << 24) | (mul((p >> 16) & 0xFF) << 16) | (mul((p >> 8) & 0xFF) << 8) | mul(p & 0xFF);
+        }
+    }
+    return FitIcon(img, size);
+}
 
 // Renders an HICON as size x size premultiplied BGRA.
 // It is drawn once on black and once on white: the black result is the premultiplied colour and the
@@ -197,11 +267,22 @@ IconPixels ExtractIconPixels(const Item& item, int size) {
     if (!item.icon.empty()) icon.reset(FileIcon(ResolvePath(item.icon), item.iconIndex, size));
     if (!icon && !item.file.empty()) {
         if (IsUrl(item.file)) {
+            Bitmap site;  // the site's own icon; failing that (offline, no icon) the browser's
+            if (DownloadFavicon(NormalizeUrl(item.file), size, site)) {
+                IconPixels px = FitIcon(site, size);
+                if (!px.Empty()) return px;
+            }
             icon.reset(UrlIcon(NormalizeUrl(item.file), size));
             IconPixels px = icon ? RenderIcon(icon.get(), size) : IconPixels{};
             if (px.Empty() || IsBlank(px)) px = ShellIconPixels(L".html", size);  // generic web page icon
             if (px.Empty() || IsBlank(px)) px = ShellIconPixels(L".url", size);   // Internet shortcut
             return px;
+        }
+        // Store apps: shell:AppsFolder\<app id>, or shell:<app id> as saved by older versions (ids have a '!')
+        if (StartsWithNoCase(item.file, L"shell:AppsFolder\\") ||
+            (StartsWithNoCase(item.file, L"shell:") && item.file.find(L'!') != std::wstring::npos)) {
+            IconPixels px = ShellItemImage(item.file, size);
+            if (!px.Empty() && !IsBlank(px)) return px;
         }
         std::wstring file = NativePath(ExpandEnv(item.file));
         icon.reset(LocatedIcon(file, size));

@@ -106,6 +106,7 @@ private:
     void OnWheel(POINT pt, int delta);
     void OnTimer(UINT_PTR id);
     void Click(const Hit& hit);
+    void Launch(const Item& item, bool admin);  // starts a button's target and hides the window
     void Drop(const Hit& target);
     void MoveItem(const CellRef& from, const CellRef& to);
     void EditItem(const CellRef& ref);

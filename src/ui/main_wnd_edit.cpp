@@ -223,11 +223,7 @@ void MainWnd::Click(const Hit& hit) {
         case HitKind::Parent: CloseSubs(); break;
         case HitKind::SubTab: SwitchSub(hit.index); break;
         case HitKind::Cell:
-            if (Item* it = ItemAt(RefForSlot(hit.index))) {
-                Item copy = *it;  // don't touch the data after Hide
-                if (!app_.settings.pinned) Hide();
-                LaunchItem(hwnd_, copy);
-            }
+            if (Item* it = ItemAt(RefForSlot(hit.index))) Launch(*it, false);
             break;
         default: break;
     }
@@ -337,6 +333,18 @@ void MainWnd::DropItems(POINT pt, std::vector<DroppedItem>& items) {
     SetForegroundWindow(hwnd_);  // once activated, clicking elsewhere triggers auto-hide
 }
 
+void MainWnd::Launch(const Item& item, bool admin) {
+    Item copy = item;  // don't touch the data after Hide
+    bool hide = !app_.settings.pinned;
+    // Start programs while the window is still in front: Windows only lets a new program, and the
+    // administrator prompt, come to the front when whoever starts it is in front. Built-in commands press
+    // keys (Win+R, Win+D) or ask first, so those hide before.
+    bool builtin = IsBuiltinCommand(copy.file);
+    if (hide && builtin) Hide();
+    LaunchItem(hwnd_, copy, admin);
+    if (hide && !builtin) Hide();
+}
+
 // ---------------------------------------------------------------------------
 // Context menus
 
@@ -377,11 +385,7 @@ void MainWnd::CellMenu(const Hit& h, POINT sp) {
     switch (RunMenu(menu, hwnd_, sp)) {
         case kCmdOpen: Click(h); break;
         case kCmdRunAdmin:
-            if (Item* it = ItemAt(ref)) {
-                Item copy = *it;
-                if (!app_.settings.pinned) Hide();
-                LaunchItem(hwnd_, copy, true);
-            }
+            if (Item* it = ItemAt(ref)) Launch(*it, true);
             break;
         case kCmdOpenFolder:
             if (Item* it = ItemAt(ref)) OpenItemFolder(*it);
