@@ -31,6 +31,10 @@ target_link_libraries(QLaunch PRIVATE
     user32 gdi32 msimg32 shell32 ole32 comctl32 comdlg32 advapi32 shlwapi wininet imm32)
 
 if(MSVC)
+    # CMake's default flags turn on exceptions (/EHsc) and optimise for speed (/O2); drop them so the options
+    # below don't override them and cl doesn't warn about it (D9025)
+    string(REPLACE "/EHsc" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+    string(REPLACE "/O2" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
     # No exceptions, no RTTI, read sources as UTF-8
     target_compile_options(QLaunch PRIVATE /utf-8 /W4 /EHs-c- /GR- /permissive-
         $<$<CONFIG:Release,MinSizeRel>:/O1 /GL /Gy /GS->)
