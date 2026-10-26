@@ -252,7 +252,8 @@ void MainWnd::Click(const Hit& hit) {
             app_.SaveSettings();
             break;
         case HitKind::Search:
-            if (Searching()) EndSearch();
+            if (searchOpen_) EndSearch();
+            else OpenSearch();
             break;
         case HitKind::Tab: OpenPage(hit.index); break;
         case HitKind::Parent: CloseSubs(); break;
@@ -671,26 +672,35 @@ std::wstring Lower(std::wstring s) {
 
 }  // namespace
 
+void MainWnd::OpenSearch() {
+    searchOpen_ = true;
+    Redraw();
+}
+
 void MainWnd::OnChar(wchar_t ch) {
     // control characters (Esc, Backspace, Enter, Ctrl+letter) are handled as keys; a search doesn't start with
     // a space
     if (ch < L' ' || ch == 0x7F || (ch == L' ' && query_.empty())) return;
+    searchOpen_ = true;
     query_ += ch;
     RunSearch();
 }
 
 bool MainWnd::OnSearchKey(UINT vk) {
-    if (!Searching()) return false;
+    if (!searchOpen_) return false;
     int n = (int)results_.cells.size(), cols = std::max(1, resultCols_);
     switch (vk) {
         case VK_ESCAPE: EndSearch(); return true;
-        case VK_BACK:
-            query_.pop_back();
-            if (Searching()) RunSearch();
-            else EndSearch();
+        case VK_BACK:  // deletes the last character; on an empty box, closes it
+            if (query_.empty()) {
+                EndSearch();
+            } else {
+                query_.pop_back();
+                RunSearch();
+            }
             return true;
         case VK_RETURN:
-            if (selected_ < n) {
+            if (Searching() && selected_ < n) {
                 if (Item* it = ItemAt(found_[selected_])) Launch(*it, GetKeyState(VK_CONTROL) < 0);
             }
             return true;
@@ -714,6 +724,12 @@ bool MainWnd::OnSearchKey(UINT vk) {
 void MainWnd::RunSearch() {
     std::wstring q = Lower(query_);
     std::vector<std::pair<int, CellRef>> hits;
+    if (q.empty()) {  // everything deleted: the box stays open over the page
+        results_.cells.clear();
+        found_.clear();
+        RefreshView();
+        return;
+    }
     auto scan = [&](const Page& p, int page, int sub) {
         for (const Cell& c : p.cells) {
             std::wstring name = Lower(c.item.name);
@@ -750,7 +766,8 @@ void MainWnd::PlaceResults() {
 }
 
 bool MainWnd::StopSearch() {
-    if (!Searching()) return false;
+    if (!searchOpen_) return false;
+    searchOpen_ = false;
     query_.clear();
     results_.cells.clear();
     found_.clear();
@@ -769,7 +786,7 @@ void MainWnd::UpdateTooltip() {
 }
 
 std::wstring MainWnd::TooltipText() const {
-    if (hover_.kind == HitKind::Search && !Searching())
+    if (hover_.kind == HitKind::Search && !searchOpen_)
         return T(L"search.tip", L"Type on the window to search all buttons");
     if (hover_.kind != HitKind::Cell || dragging_) return {};
     const Page& view = CurrentView();

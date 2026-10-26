@@ -141,7 +141,7 @@ void MainWnd::PaintSearch() {
     const int gap = MulDiv(4, dpi_, 96), line = std::max(1, MulDiv(1, dpi_, 96));
 
     // the glyph sits at the right end while idle and moves to the left of the text while searching
-    bool searching = Searching();
+    bool searching = searchOpen_;
     int gx = searching ? box.left : box.right - glyph;
     int alpha = searching || hover_.kind == HitKind::Search ? 255 : 150;
     canvas_.Blend(SearchGlyph(glyph, style.color), gx, box.top + (boxH - glyph) / 2, alpha);

@@ -123,15 +123,17 @@ private:
     void DragOver(POINT pt) override;
     void DragEnd() override;
     void DropItems(POINT pt, std::vector<DroppedItem>& items) override;
-    // Search: typing on the window searches the buttons of every page and sub-page by name and file name; the
-    // results replace the buttons shown until the search is cleared (Esc) or another tab is chosen
-    bool Searching() const { return !query_.empty(); }
+    // Search: clicking the magnifying glass or just typing opens the search box. Typing searches the buttons
+    // of every page and sub-page by name and file name; the results replace the buttons shown until the search
+    // is closed (Esc, the magnifying glass) or another tab is chosen
+    bool Searching() const { return !query_.empty(); }  // results are shown
+    void OpenSearch();
     void OnChar(wchar_t ch);
-    bool OnSearchKey(UINT vk);    // Esc, Backspace, Enter and arrows while searching; true when handled
-    void RunSearch();             // the query changed: find the matches and show them
+    bool OnSearchKey(UINT vk);    // Esc, Backspace, Enter and arrows while the box is open; true when handled
+    void RunSearch();             // the query changed: show the matches, or the page again when it is empty
     void PlaceResults();          // lay the results out row by row for the current column count
-    bool StopSearch();            // forgets the search without redrawing; true if there was one
-    void EndSearch();             // clears the search and shows the page again
+    bool StopSearch();            // closes the box without redrawing; true if it was open
+    void EndSearch();             // closes the box and shows the page again
     void ShowSettings();
     static void PreviewSettings(void* self, const Settings& s);  // the skin changed in the settings dialog
     void DataChanged();           // data changed: save, lay out again, reload icons
@@ -163,6 +165,7 @@ private:
     int scrollRow_ = 0;           // scrolled rows when there are more cells than fit
     std::vector<IconPixels> icons_;  // icons of the buttons in the current view, same index as Page::cells
 
+    bool searchOpen_ = false;     // the search box is shown, with a caret
     std::wstring query_;          // search text; empty when not searching
     Page results_;                // matching buttons, laid out row by row
     std::vector<CellRef> found_;  // where each result lives, same index as results_.cells
