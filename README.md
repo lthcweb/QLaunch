@@ -10,7 +10,7 @@ A tiny, fast program launcher for Windows with **two levels of tabs**.
 
 - **Tiny.** One exe of under 300 KB. No installer, no .NET, no VC++ runtime: it only uses DLLs that ship with Windows.
 - **Instant.** Starts in a blink and pops up the moment the mouse touches a screen corner. Icons are extracted once in the background and cached, so later shows only read the cache.
-- **Light on resources.** Pure Win32 with no UI framework. While hidden it frees its icons, images and drawing surface and gives the memory back to Windows, so it costs next to nothing sitting in the background.
+- **Light on resources.** Pure Win32 with no UI framework. While hidden it frees its icons, images and drawing surface and gives the memory back to Windows, so it uses less than 1 MB of memory sitting in the background.
 - **Portable.** Settings and buttons live next to the exe. Copy the folder to a USB stick or another PC and everything comes with it.
 - **Two levels of tabs.** Every page can have its own sub-pages, so a hundred programs still stay one or two moves away.
 - **Good looking.** A dozen built-in skins, dark and light, with translucent windows and live preview. Make your own in one command with the bundled script.
@@ -110,7 +110,7 @@ Open the folder in VS Code with the CMake Tools extension and Visual Studio 2019
 
 - **小**：只有一个 exe，不到 300 KB。不用安装，不需要 .NET，也不需要 VC++ 运行库，只用 Windows 自带的 DLL。
 - **快**：秒开，鼠标一碰屏幕角落就弹出来。图标只在后台提取一次并缓存，之后打开只读缓存。
-- **省**：纯 Win32，不用任何 UI 框架。隐藏时释放图标、图片和画布，把内存还给系统，挂在后台几乎不占资源。
+- **省**：纯 Win32，不用任何 UI 框架。隐藏时释放图标、图片和画布，把内存还给系统，挂在后台内存占用不到 1 MB。
 - **便携**：设置和按钮都存在 exe 旁边，整个文件夹拷到 U 盘或别的电脑上照样用。
 - **二级标签**：每个页面都可以有自己的二级页面，上百个程序也只在一两步之内。
 - **好看**：自带十几个深色、浅色主题，半透明窗口，设置里即时预览；用附带的脚本，一条命令就能生成自己的主题。
