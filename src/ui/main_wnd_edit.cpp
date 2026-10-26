@@ -8,6 +8,7 @@
 #include <cstdlib>
 
 #include "core/path.h"
+#include "core/pinyin.h"
 #include "core/str.h"
 #include "i18n/i18n.h"
 #include "launch/builtin.h"
@@ -719,8 +720,10 @@ bool MainWnd::OnSearchKey(UINT vk) {
     return true;
 }
 
-// A button matches when its name or its file name contains the text, ignoring case. Names that start with the
-// text come first, then names that contain it, then file names; otherwise in page order.
+// A button matches when its name or its file name contains the text, ignoring case, or when the text is the
+// pinyin of its name ("jsb" or "jishiben" for 记事本). Names that start with the text come first, then names
+// that contain it, then pinyin from the start of the name, pinyin inside it, and file names; otherwise in
+// page order.
 void MainWnd::RunSearch() {
     std::wstring q = Lower(query_);
     std::vector<std::pair<int, CellRef>> hits;
@@ -735,8 +738,12 @@ void MainWnd::RunSearch() {
             std::wstring name = Lower(c.item.name);
             size_t at = name.find(q);
             int rank = at == 0 ? 0 : at != std::wstring::npos ? 1 : -1;
+            if (rank < 0) {
+                PinyinHit hit = MatchPinyin(name, q);
+                rank = hit == PinyinHit::Start ? 2 : hit == PinyinHit::Inside ? 3 : -1;
+            }
             if (rank < 0 && !IsUrl(c.item.file) && Lower(FileTitle(c.item.file)).find(q) != std::wstring::npos)
-                rank = 2;
+                rank = 4;
             if (rank >= 0) hits.push_back({rank, CellRef{page, sub, c.pos}});
         }
     };

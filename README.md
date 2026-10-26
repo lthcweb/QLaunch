@@ -39,7 +39,7 @@ QLaunch stays out of sight. Move the mouse into the screen corner you chose (bot
 
 ### Search
 
-Just start typing while the window is open. Buttons from every page and sub-page whose name (or file name) contains the text take the place of the buttons, and the caption shows how many were found. Press `Enter` to start the highlighted one (`Ctrl+Enter` as administrator), move with the arrow keys, and press `Esc` to clear the search. Input methods such as Chinese work too.
+Just start typing while the window is open. Buttons from every page and sub-page whose name (or file name) contains the text take the place of the buttons, and the caption shows how many were found. Chinese names can be found by their pinyin, in full or by initials: `jsb`, `jishiben` and `jishib` all find 记事本, and both readings of a polyphone work. Press `Enter` to start the highlighted one (`Ctrl+Enter` as administrator), move with the arrow keys, and press `Esc` to clear the search. Input methods such as Chinese work too.
 
 ### Buttons
 
@@ -144,7 +144,7 @@ QLaunch 平时不占地方。鼠标移到设定的屏幕角落（默认左下角
 
 ### 搜索
 
-窗口打开时直接打字就能搜。所有页面和二级页面里，名称（或文件名）包含这些字的按钮会显示在按钮区，标题栏显示找到几个。`回车` 启动高亮的那个（`Ctrl+回车` 以管理员身份运行），方向键移动，`Esc` 清空搜索。中文输入法也能用。
+窗口打开时直接打字就能搜。所有页面和二级页面里，名称（或文件名）包含这些字的按钮会显示在按钮区，标题栏显示找到几个。中文名称可以用拼音搜，全拼、首字母或混着打都行：`jsb`、`jishiben`、`jishib` 都能找到“记事本”，多音字的每个读音都算。`回车` 启动高亮的那个（`Ctrl+回车` 以管理员身份运行），方向键移动，`Esc` 清空搜索。中文输入法也能用。
 
 ### 按钮
 
