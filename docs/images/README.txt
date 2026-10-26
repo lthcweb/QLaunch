@@ -1,8 +1,7 @@
-Screenshots used by README.md. Expected files (PNG):
+Screenshots used by README.md:
 
-  main.png      main window
+  theme2.png    Voyage skin, the main screenshot
   subpages.png  a page with its sub-tabs open
-  system.png    the System page
-  skins.png     a few skins side by side
-
-After adding a file, remove the <!-- --> around its image line in README.md.
+  theme1.png    Sakura   theme3.png  Blaze
+  theme4.png    Forest   theme5.png  Stone (System page, English)
+  theme6.png    Stone (System page, Chinese)
