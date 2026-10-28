@@ -62,3 +62,4 @@
 #define IDC_TABH            1226
 #define IDC_CELLFONT        1227
 #define IDC_TABFONT         1228
+#define IDC_TABCLICK        1229

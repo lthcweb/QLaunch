@@ -41,7 +41,10 @@ void Settings::Load(const std::wstring& path) {
     cornerDelay = Clamp(ini.GetInt(L"Trigger", L"CornerDelay", cornerDelay), 0, 5000);
     hotkey = (WORD)ini.GetInt(L"Trigger", L"HotKey", hotkey);
     showAt = (ShowAt)Clamp(ini.GetInt(L"Trigger", L"ShowAt", (int)showAt), 0, 1);
-    tabHoverDelay = Clamp(ini.GetInt(L"Trigger", L"TabHoverDelay", tabHoverDelay), -1, 5000);
+    tabHoverDelay = ini.GetInt(L"Trigger", L"TabHoverDelay", tabHoverDelay);
+    // older versions stored click-only switching as a negative hover delay
+    tabClick = ini.GetInt(L"Trigger", L"TabClick", tabHoverDelay < 0 ? 1 : 0) != 0;
+    tabHoverDelay = tabHoverDelay < 0 ? 20 : std::min(tabHoverDelay, 5000);
 
     tabSide = (TabSide)Clamp(ini.GetInt(L"Layout", L"TabSide", (int)tabSide), 0, 3);
     cols = Clamp(ini.GetInt(L"Layout", L"Cols", cols), 1, 50);
@@ -76,6 +79,7 @@ void Settings::Save(const std::wstring& path) const {
     t.SetInt(L"CornerDelay", cornerDelay);
     t.SetInt(L"HotKey", hotkey);
     t.SetInt(L"ShowAt", (int)showAt);
+    t.SetInt(L"TabClick", tabClick ? 1 : 0);
     t.SetInt(L"TabHoverDelay", tabHoverDelay);
 
     Ini::Section& l = ini.Get(L"Layout");

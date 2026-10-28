@@ -205,17 +205,17 @@ void MainWnd::OnMouseMove(POINT pt, bool leftDown) {
     SetHover(h);
 }
 
-// Hovering a top-level tab or a sub-tab switches to it; while dragging, hovering "‹ parent page" goes back to
-// the top-level tabs
+// Hovering a top-level tab or a sub-tab switches to it, unless tabs switch on click; while dragging (no click
+// is possible) hovering always switches, and hovering "‹ parent page" goes back to the top-level tabs
 void MainWnd::SetHover(const Hit& h) {
     if (h == hover_) return;
     hover_ = h;
     KillTimer(hwnd_, kTimerHover);
     bool carrying = dragging_ || fileDrag_;
-    int delay = app_.settings.tabHoverDelay;
+    const Settings& s = app_.settings;
     bool newTab = (h.kind == HitKind::Tab && h.index != page_) || (h.kind == HitKind::SubTab && h.index != sub_);
-    if (newTab && (delay >= 0 || carrying))
-        SetTimer(hwnd_, kTimerHover, std::max(delay, 1), nullptr);
+    if (newTab && (carrying || !s.tabClick))
+        SetTimer(hwnd_, kTimerHover, std::max(s.tabHoverDelay, 1), nullptr);
     else if (carrying && h.kind == HitKind::Parent)
         SetTimer(hwnd_, kTimerHover, 500, nullptr);
     UpdateTooltip();

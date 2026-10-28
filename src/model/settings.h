@@ -33,7 +33,8 @@ struct Settings {
     int cornerDelay = 0;            // how many ms the mouse must stay in the hot corner before the window opens
     WORD hotkey = 0;                // low byte virtual key, high byte HOTKEYF_* (same as the hotkey control)
     ShowAt showAt = ShowAt::Mouse;
-    int tabHoverDelay = 20;         // ms of hovering over a tab before switching to it; < 0 means click only
+    bool tabClick = false;          // switch tabs by clicking them instead of hovering
+    int tabHoverDelay = 20;         // ms of hovering over a tab before switching to it (when tabClick is off)
 
     // [Layout]
     TabSide tabSide = TabSide::Left;
