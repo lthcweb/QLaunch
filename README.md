@@ -32,7 +32,7 @@ QLaunch stays out of sight. Move the mouse into the screen corner you chose (bot
 
 ![Sub-pages](docs/images/subpages.png)
 
-- **Tabs** run down the left side (or top, right or bottom, as you like). Hover over a tab to switch to it.
+- **Tabs** run down the left side (or top, right or bottom, as you like). Hover over a tab to switch to it, or turn on click-to-switch in Settings.
 - A tab marked **`›`** has sub-pages. Click it and the same tab bar turns into a highlighted **`‹ Game`** tag followed by its sub-tabs. The window never changes size.
 - The **caption** shows where you are, such as `Game › Solo`.
 - Go back with a click on `‹ Game`, a right-click on the tab bar, `Esc`, or the mouse back button.
@@ -83,7 +83,7 @@ The new skin appears in `assets\skins\MySkin`. Copy that folder into the `skins`
 
 ### Settings
 
-Hot corner and delay, hotkey, where the window opens, language, skin, tab position, button and tab sizes, icon size, hover delay, fonts for tabs and buttons, and Start with Windows.
+Hot corner and delay, hotkey, where the window opens, language, skin, tab position, button and tab sizes, icon size, hover delay or click-to-switch tabs, fonts for tabs and buttons, and Start with Windows.
 
 ## Tips
 
@@ -137,7 +137,7 @@ QLaunch 平时不占地方。鼠标移到设定的屏幕角落（默认左下角
 
 ![二级页面](docs/images/subpages.png)
 
-- **标签**默认在左边（也可以放上、右、下），鼠标悬停就切换。
+- **标签**默认在左边（也可以放上、右、下），鼠标悬停就切换（也可以在设置里改成点击才切换）。
 - 带 **`›`** 的标签有二级页面。点它后，同一个标签栏换成高亮的 **`‹ Game`** 返回标签加上它的二级标签，窗口大小始终不变。
 - **标题栏**显示当前位置，例如 `Game › Solo`。
 - 返回一级标签：点 `‹ Game`、右键标签栏、按 `Esc`，或鼠标侧键“后退”。
@@ -188,7 +188,7 @@ python tools\make_skin.py MySkin "https://www.realtimecolors.com/?colors=ecf0e8-
 
 ### 设置
 
-热角和延时、快捷键、窗口弹出位置、语言、主题、标签位置、按钮和标签尺寸、图标大小、悬停延时、标签和按钮的字体、开机自动启动。
+热角和延时、快捷键、窗口弹出位置、语言、主题、标签位置、按钮和标签尺寸、图标大小、悬停延时或点击切换标签、标签和按钮的字体、开机自动启动。
 
 ## 小贴士
 

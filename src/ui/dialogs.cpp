@@ -189,6 +189,7 @@ const i18n::DlgText kSettingsTexts[] = {
     {IDC_TAB_LABEL, L"settings.tabSize"},
     {IDC_ICONSIZE_LABEL, L"settings.iconSize"},
     {IDC_HOVER_LABEL, L"settings.hover"},
+    {IDC_TABCLICK, L"settings.tabClick"},
     {IDC_AUTOSTART, L"settings.autoStart"},
     {IDOK, L"common.ok"},
     {IDCANCEL, L"common.cancel"},
@@ -202,6 +203,13 @@ struct SettingsArgs {
     SettingsPreview preview;
     void* ctx;
 };
+
+// The hover delay only applies when tabs switch on hover
+void EnableHover(HWND dlg) {
+    bool hover = IsDlgButtonChecked(dlg, IDC_TABCLICK) != BST_CHECKED;
+    EnableWindow(GetDlgItem(dlg, IDC_HOVER_LABEL), hover);
+    EnableWindow(GetDlgItem(dlg, IDC_HOVER), hover);
+}
 
 // The font buttons show the current choice, e.g. "Font: Segoe UI 10"
 void ShowFont(HWND dlg, int id, const FontSpec& f) {
@@ -311,7 +319,9 @@ void InitSettings(HWND dlg, SettingsArgs& a) {
         AddCombo(dlg, IDC_ICONSIZE, FromInt(kIconSizes[i]).c_str());
         if (kIconSizes[i] == s.iconSize) SetComboSel(dlg, IDC_ICONSIZE, i);
     }
-    SetDlgItemInt(dlg, IDC_HOVER, s.tabHoverDelay, TRUE);
+    SetDlgItemInt(dlg, IDC_HOVER, s.tabHoverDelay, FALSE);
+    CheckDlgButton(dlg, IDC_TABCLICK, s.tabClick ? BST_CHECKED : BST_UNCHECKED);
+    EnableHover(dlg);
     ShowFont(dlg, IDC_CELLFONT, s.buttonFont);
     ShowFont(dlg, IDC_TABFONT, s.tabFont);
     CheckDlgButton(dlg, IDC_AUTOSTART, *a.autoStart ? BST_CHECKED : BST_UNCHECKED);
@@ -339,7 +349,9 @@ void ReadSettings(HWND dlg, SettingsArgs& a) {
     if (w >= 16 && w <= 400) s.tabW = w;
     if (h >= 12 && h <= 200) s.tabH = h;
     if ((sel = ComboSel(dlg, IDC_ICONSIZE)) >= 0) s.iconSize = kIconSizes[sel];
-    s.tabHoverDelay = (int)GetDlgItemInt(dlg, IDC_HOVER, nullptr, TRUE);
+    int hover = (int)GetDlgItemInt(dlg, IDC_HOVER, nullptr, FALSE);
+    if (hover <= 5000) s.tabHoverDelay = hover;
+    s.tabClick = IsDlgButtonChecked(dlg, IDC_TABCLICK) == BST_CHECKED;
     *a.autoStart = IsDlgButtonChecked(dlg, IDC_AUTOSTART) == BST_CHECKED;
 }
 
@@ -362,6 +374,10 @@ INT_PTR CALLBACK SettingsProc(HWND dlg, UINT msg, WPARAM wp, LPARAM lp) {
                     ShowFont(dlg, LOWORD(wp), f);
                     Preview(dlg, *a);
                 }
+                return TRUE;
+            }
+            if (LOWORD(wp) == IDC_TABCLICK) {
+                EnableHover(dlg);
                 return TRUE;
             }
             if (LOWORD(wp) == IDOK) {
